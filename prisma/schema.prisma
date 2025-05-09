@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  username   String   @unique
+  name       String
+  password   String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Item {
+  id         Int      @id @default(autoincrement())
+  itemCode  String   @unique
+  itemName  String
+  quantity   Int
+  unit       String   @default("pcs")
+  withdrawn  BigInt   @default(0)
+  addedBy String
+  updatedBy String?
+  isDeleted Boolean @default(false)
+  date  DateTime
+  updatedAt  DateTime @updatedAt
+
+  Log Log[]
+  PulledItem PulledItem[]
+  AddedItem AddedItem[]
+  PurchaseRequest PurchaseRequest[]
+  RequestDelivered RequestDelivered[]
+}
+
+model PurchaseRequest {
+  id String @id @default(cuid())
+  itemId Int
+  requestedQuantity Int
+  requestedBy String
+  isDeleted Boolean @default(false)
+  requestedDate DateTime
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model RequestDelivered {
+  id String @id @default(cuid())
+  itemId Int
+  deliveredQuantity Int
+  deliveredBy String
+  addedBy String
+  isDeleted Boolean @default(false)
+  deliveredDate DateTime
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model PulledItem {
+  id               String   @id @default(cuid())
+  itemId         Int
+  releasedQuantity Int
+  releasedBy       String
+  receivedBy       String
+  isDeleted Boolean @default(false)
+  releasedDate     DateTime
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model AddedItem {
+  id            String   @id @default(cuid())
+  itemId      Int
+  addedQuantity Int
+  addedBy       String
+  isDeleted Boolean @default(false)
+  addedDate     DateTime
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  itemId    Int
+  log       String
+  user      String?
+  isDeleted Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+

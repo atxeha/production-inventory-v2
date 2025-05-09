@@ -1,0 +1,452 @@
+<div class="container-fluid p-5 pt-1">
+    <div class="d-flex justify-content-between">
+        <div>
+            <h5 class="text-center mb-4 mt-1">Production Inventory</h5>
+        </div>
+
+        <div class="d-flex gap-3 search-input">
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
+                    id="deleteSelected">delete</i>
+            </div>
+            <div>
+                <span data-bs-toggle="modal" data-bs-target="#logModal">
+                    <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                        data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Logs" id="log">history</i>
+                </span>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Import data"
+                    id="importItem">arrow_downward</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Export data"
+                    id="exportItem">arrow_upward</i>
+            </div>
+            <div>
+                <span data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                        data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="New item"
+                        id="addItem">add</i>
+                </span>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Select item"
+                    id="selectItem">check</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Select all"
+                    id="selectAllItem">done_all</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Pulled items"
+                    id="viewPulledItem">outbox</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn"
+                style="cursor: pointer;"
+                    data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip"
+                    title="View requests" id="viewRequest">forward_to_inbox</i>
+            </div>
+        </div>
+        <div>
+            <input name="searchItem" id="searchItem" type="search"
+                class="search-box search-width form-control rounded-5 font me-4" placeholder="Search item code">
+        </div>
+    </div>
+    <div class="table-container table-responsive">
+        <table class="table font table-hover" id="itemsTable">
+            <thead id="itemsTableHead">
+                <tr>
+                    <th id="checkboxColumn" style="width: 3rem; display: none;">
+                        <input type="checkbox" id="selectAllCheckbox">
+                    </th>
+                    <th style="width: 5rem;">No.</th>
+                    <th>Code</th>
+                    <th style="min-width: 18rem;">Item</th>
+                    <th style="width: 7rem;">Unit</th>
+                    <th style="width: 5rem;" class="px-3">Stock</th>
+                    <th style="width: 5rem;" class="px-3">
+                        <div class="d-flex">
+                            PR
+                            <select class="filter-select text-muted" id="prFilter" data-bs-placement="top"
+                                data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Year">
+                                <option class="text-center" value="">--</option>
+                                <option class="text-center" value="2024">2024</option>
+                                <option class="text-center" value="2025">2025</option>
+                                <option class="text-center" value="2026">2026</option>
+                            </select>
+                        </div>
+
+                    </th>
+                    <th style="width: 5rem;" class="px-3">
+                        <div class="d-flex">
+                            DR
+                            <select class="filter-select text-muted" id="drFilter" data-bs-placement="top"
+                                data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Year">
+                                <option class="text-center" value="">--</option>
+                                <option class="text-center" value="2024">2024</option>
+                                <option class="text-center" value="2025">2025</option>
+                                <option class="text-center" value="2026">2026</option>
+                            </select>
+                        </div>
+                    </th>
+                    <th style="width: 5rem;" class="px-3">Withdrawn</th>
+                    <th class="actions pe-4" style="width: 9rem;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Pull Item Modal -->
+<div class="modal" id="pullItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="pullItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="pullItemModalLabel">Pull/Withdraw Item</h6>
+            </div>
+            <form method="post" id="pullItemForm">
+                <div class="modal-body font p-4 pt-0 pb-2">
+                    <div class="mt-1">
+                        <table class="table table-responsive font">
+                            <thead>
+                                <tr style="font-size: .85rem !important;">
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Stocks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="itemCodeLabel" class="p-2"></td>
+                                    <td id="itemNameLabel" class="p-2"></td>
+                                    <td id="itemStockLabel" class="p-2"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="row font mb-4">
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="pullQuantity">Quantity</label>
+                            <input type="number" min="1" value="1" id="pullQuantity"
+                                class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-7">
+                            <label class="mb-2 ms-2" for="pullDate">Date <span class="text-muted"
+                                    style="font-size: 0.8rem;">(Today)</span></label>
+                            <input type="datetime-local" id="pullDate"
+                                class="search-box form-control rounded-5 font date">
+                        </div>
+                    </div>
+                    <div class="row font mb-4">
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="pullReleasedBy">Released By</label>
+                            <input type="text" id="pullReleasedBy" class="search-box form-control rounded-5 font"
+                                value="Vios R.">
+                        </div>
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="pullReceivedBy">Received By</label>
+                            <input type="text" id="pullReceivedBy" class="search-box form-control rounded-5 font"
+                                list="datalist">
+                            <datalist id="datalist">
+                                <option value="Deter L.">
+                                <option value="Abao E.">
+                                <option value="Timbal M.">
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Back</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Pull</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Add Item Modal -->
+<div class="modal" id="addItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="1"
+    aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="addItemModalLabel">Add New Item</h6>
+            </div>
+            <form method="post" id="addItemForm">
+                <div class="modal-body font p-4 pb-2">
+                    <div class="row font mb-4">
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="addItemCode">Item Code</label>
+                            <input type="text" id="addItemCode" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="addItemName">Item</label>
+                            <input type="text" id="addItemName" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-2">
+                            <label class="mb-2 ms-2" for="addQuantity">Quantity</label>
+                            <input type="number" id="addQuantity" class="search-box form-control rounded-5 font">
+                        </div>
+                    </div>
+
+                    <div class="row font mb-4">
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="addUnit">Unit</label>
+                            <div class="custom-datalist w-100">
+                                <input type="text" id="addUnit" autocomplete="off" class="search-box form-control rounded-5 font" />
+                                <ul id="addUnits" class="options-list rounded-3">
+                                    <li>Ream</li>
+                                    <li>Box</li>
+                                    <li>Cut</li>
+                                    <li>Piece</li>
+                                    <li>Set</li>
+                                    <li>Bottle</li>
+                                    <li>Roll</li>
+                                    <li>Pack</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="addDate">Date <span class="text-muted"
+                                    style="font-size: 0.8rem;">(Default: today)</span></label>
+                            <input type="datetime-local" id="addDate" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="addWithdrawn">Withdrawn <span class="text-muted"
+                                    style="font-size: 0.8rem;">(Default: 0)</span></label>
+                            <input type="number" id="addWithdrawn" class="search-box form-control rounded-5 font">
+                        </div>
+                    </div>
+
+                    <div class="row font mb-3">
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="addedBy">Added By</label>
+                            <input type="text" id="addedBy" class="search-box form-control rounded-5 font"
+                                list="datalist">
+                        </div>
+
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="addDeliveredBy">Delivered By</label>
+                            <input type="text" id="addDeliveredBy" class="search-box form-control rounded-5 font"
+                                disabled>
+                        </div>
+                    </div>
+                    <div class="row font mb-3">
+                        <div class="input-field col-5 d-flex ">
+                            <input class="ms-1" type="checkbox" id="isDelivered" style="margin-top: 3px;">
+                            <label class="ms-2" for="isDelivered">Add this item as delivered</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3"
+                            data-bs-dismiss="modal">Discard</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Update Item Quantity Modal -->
+<div class="modal" id="updateItemQuantityModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="updateItemQuantityLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="updateItemQuantityLabel">Add Item Quantity</h6>
+            </div>
+            <form method="post" id="newQuantityItemForm">
+                <div class="modal-body font p-4 pt-0 pb-2">
+                    <div class="mt-1">
+                        <table class="table table-responsive font">
+                            <thead>
+                                <tr style="font-size: .85rem !important;">
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Stocks</th>
+                                </tr>
+                            </thead>
+                            <tboby>
+                                <tr>
+                                    <td id="newItemCode" class="p-2"></td>
+                                    <td id="newItemName" class="p-2"></td>
+                                    <td id="newItemStock" class="p-2"></td>
+                                </tr>
+                            </tboby>
+                        </table>
+                    </div>
+                    <input type="hidden" id="newQuantityItemId">
+                    <div class="row font mb-4">
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="newQuantity">Quantity</label>
+                            <input type="number" min="1" value="1" id="newQuantity"
+                                class="search-box form-control rounded-5 font" autofocus>
+                        </div>
+                        <div class="input-field col-7">
+                            <label class="mb-2 ms-2" for="newQuantityDate">Date <span class="text-muted"
+                                    style="font-size: 0.8rem;">(Today)</span></label>
+                            <input type="datetime-local" id="newQuantityDate"
+                                class="search-box form-control rounded-5 font date" disabled>
+                        </div>
+                    </div>
+                    <div class="row font mb-4">
+                        <div class="input-field col-12">
+                            <label class="mb-2 ms-2" for="newUpdatedBy">Updated By</label>
+                            <input type="text" id="newUpdatedBy" class="search-box form-control rounded-5 font"
+                                list="datalist">
+                        </div>
+                    </div>
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Back</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Add</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Delete Item Modal -->
+<div class="modal" id="deleteItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body font p-4 pb-2">
+                <form method="post" id="deleteItemForm">
+                    <div class="font mb-4">
+                        <p>Are sure to delete item selected item(s)?</p>
+                    </div>
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Edit Item Modal -->
+<div class="modal" id="editItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="1" aria-hidden="true"
+    aria-labelledby="editItemModalLabel">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="editItemModalLabel">Edit Item Information</h6>
+            </div>
+            <form method="post" id="editItemForm">
+                <input type="hidden" id="editItemId">
+                <div class="modal-body font p-4 pb-2">
+                    <div class="row font mb-4">
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="editItemCode">Item Code</label>
+                            <input type="text" id="editItemCode" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="editItemName">Item</label>
+                            <input type="text" id="editItemName" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-2">
+                            <label class="mb-2 ms-2" for="editUnit">Unit</label>
+                            <select type="text" id="editUnit"
+                                class="form-select search-box form-control rounded-5 font">
+                                <option value="Ream">Ream</option>
+                                <option value="Box">Box</option>
+                                <option value="Cut">Cut</option>
+                                <option value="Pcs">Pieces</option>
+                                <option value="Set">Set</option>
+                                <option value="Bottle">Bottle</option>
+                                <option value="Roll">Roll</option>
+                                <option value="Pack">Pack</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3"
+                            data-bs-dismiss="modal">Discard</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Log Modal -->
+<div class="modal" id="logModal" data-bs-keyboard="false" tabindex="-1" aria-hidden="true"
+    aria-labelledby="logModalLabel">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="logModalLabel">History log</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body font m-4 mt-0 pb-2 p-0 log-modal">
+                <table class="table font" id="inventoryTable">
+                    <thead class="thead" id="thead">
+                        <tr>
+                            <th class="pb-d2">
+                                <div class="d-flex">
+                                    <span>Performed by</span>
+                                    <span>
+                                        <i class="icon material-icons">q</i>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="pb-2d">
+                                <div class="d-flex">
+                                    <span>Action</span>
+                                    <span>
+                                        <i class="icon material-icons">q</i>
+                                    </span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex justify-content-between p-0">
+                                    <span>Date</span>
+                                    <span data-bs-toggle="modal" data-bs-target="#deleteAllLogModal">
+                                        <i class="dlt-icon icon-btn icon material-icons p-0" data-bs-toggle="tooltip"
+                                            data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+                                            title="Clear logs" id="dltIcon">delete_sweep</i>
+                                    </span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete All Logs Modal -->
+<div class="modal" id="deleteAllLogModal" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body font p-4 pb-2">
+                <form method="post" id="deleteAllLogForm">
+                    <input type="hidden" id="deleteAllLogId">
+                    <div class="font mb-4">
+                        <p>Are sure to delete history logs?</p>
+                    </div>
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

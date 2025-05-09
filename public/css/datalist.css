@@ -1,0 +1,38 @@
+.custom-datalist {
+    position: relative;
+    width: 250px;
+}
+
+.options-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #ccc;
+    max-height: 190px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    margin-top: 4px;
+    padding: 0;
+    display: none;
+
+    /* Hide scrollbar for Webkit (Chrome, Safari) */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+
+.options-list li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.options-list li:hover {
+    background-color: #efecf3;
+}
+
+.options-list::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+}

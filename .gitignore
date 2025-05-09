@@ -1,0 +1,51 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.env
+migrations
+*inventory.db-journal
+
+# Compiled TypeScript files
+*dist
+out/
+*.tsbuildinfo
+
+# Build artifacts
+release/
+build/
+!public/  # Keep HTML and static assets if needed
+!assets/  # Keep app icons and images
+
+# Logs & Temp files
+logs/
+*.log
+*.pid
+*.seed
+*.sqlite3-journal
+.DS_Store
+Thumbs.db
+
+# Electron-specific exclusions
+/.eslintcache
+/.parcel-cache
+/.vscode/
+
+# SQLite database (if used)
+db/inventory.db
+db/*.sqlite
+db/*.sqlite3
+
+# Electron Forge & Electron Builder output
+forge.config.js
+electron-builder.yml
+*.asar
+*.map
+*.bak
+
+# OS-specific files
+*.swp
+*.swo
+*.swn

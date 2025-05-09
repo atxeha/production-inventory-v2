@@ -1,0 +1,246 @@
+@font-face {
+    font-family: 'Poppins';
+    src: url('../../assets/fonts/Poppins-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    color: #3C374D;
+    font-family: 'Poppins', sans-serif;
+    /* background-color: #3C374D; */
+}
+
+th,
+td {
+    color: #3C374D !important;
+}
+
+td, th {
+    padding: .8rem .5rem .25rem .5rem !important;
+}
+.font {
+    font-size: 0.9rem !important;
+}
+.search-box {
+    height: 30px;
+    border: 1px solid #9c96b4;
+    padding: 0 1rem;
+    transition: all 0.1s ease-in;
+}
+.search-width {
+    width: 300px;
+}
+.search-box:focus,
+.search-box:hover,
+.search-btn:hover,
+.primary-btn:hover {
+    border: 1px solid #9c96b4;
+    box-shadow: 0 0 5px #9c91ca;
+    transition: all 0.1s ease-in;
+}
+
+.is-delivered {
+    background-color: #e9ecef;
+    /* light gray background */
+    cursor: not-allowed;
+    pointer-events: none;
+    color: #6c757d;
+    /* muted text color */
+}
+
+.is-delivered:focus {
+    box-shadow: none !important;
+    outline: none;
+}
+
+.date:hover, .date:focus {
+    box-shadow: none !important;
+}
+
+.secondary-btn:hover {
+    border: 1px solid #cbc7dd;
+    box-shadow: 0 0 5px #9c91ca;
+    transition: all 0.1s ease-in;
+}
+
+.container-fluid {
+    display: flex;
+    flex-direction: column;
+    height: 99vh;
+}
+
+.d-flex.justify-content-between {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
+    padding-bottom: 10px;
+}
+
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 140px);
+    position: relative;
+}
+
+.table thead {
+    position: sticky !important;
+    top: 0;
+    z-index: 2;
+    background-color: #ffffff;
+}
+
+.search-btn {
+    height: 30px;
+    width: 51px;
+    border: 1px solid #9c96b4;
+    background-color: #9c96b4;
+}
+
+.dlt-icon {
+    color: #d47070 !important;
+    cursor: pointer;
+}
+
+.edit-icon {
+    color: #388E3C !important;
+    cursor: pointer;
+}
+.icon {
+    font-size: 1.4rem;
+    width: 23px;
+    height: 23px;
+    padding: 0;
+        margin: 0;
+}
+.icon-sm {
+    font-size: 1.3rem;
+    width: 23px;
+    height: 23px;
+    padding: 0;
+    margin: 0;
+}
+.icon-btn {
+    border-radius: 3px;
+    color: #3C374D;
+    transition: all 0.1s ease-in;
+
+}
+.icon-btn:hover {
+    box-shadow: 0 0 5px #3C374D;
+    transition: all 0.1s ease-in;
+}
+.btns {
+    height: 30px;
+    color: #000000;
+    padding: 0 1rem;
+}
+.btn-modal {
+    height: 30px !important;
+}
+.primary-btn {
+    border: 1px solid #9c96b4;
+    background-color: #9c96b4;
+}
+
+.secondary-btn {
+    border: 1px solid #cbc7dd;
+    background-color: #cbc7dd;
+}
+.btn-close {
+    font-size: .9rem;
+}
+.btn-close:focus {
+    box-shadow: none;
+}
+.btn-link {
+    color: #d47070;
+    transition: all 0.1s ease-in;
+}
+.btn-link:hover {
+    color: #7c1717;
+}
+
+.search-icon {
+    padding-top: 3px;
+    color: #3C374D
+}
+
+input[type="checkbox"] {
+    accent-color: #332958;
+    width: 13px;
+    height: 13px;
+    font-size: small;
+}
+
+.selected-row td {
+    background-color: #eceaf1 !important;
+}
+
+.actions {
+    text-align: end;
+    margin-right: 2.5rem !important;
+}
+
+.filter-select {
+    border: none;
+    width: 3.5rem;
+    margin: 0;
+    font-size: .8rem;
+}
+.filter-select:focus {
+    border: none !important;
+    box-shadow: none;
+    outline: none;
+}
+
+.filter-prdr {
+    width: 2.5rem !important;
+    font-size: .9rem !important;
+}
+
+.tooltip-inner {
+    background-color:#4f4c5a !important;
+    color: #ffffff !important;
+    font-size: 12px;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+.custom-tooltip {
+    --bs-tooltip-bg: transparent;
+    --bs-tooltip-color: #000;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 10px;
+    /* border: 2px solid #f1f1f1; */
+    transition: background-color 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+/* Show scrollbar thumb when scrolling */
+.scrolling::-webkit-scrollbar-thumb {
+    background-color: #d6d4e2;
+    opacity: 1;
+}
+
+::-webkit-scrollbar-track {
+    background: #ffffff;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #cbc7dd;
+}
+
+.log-item {
+    font-style: italic;
+    color: #7f7c8a;
+}
