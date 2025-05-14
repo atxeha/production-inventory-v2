@@ -1,0 +1,140 @@
+<div class="container-fluid p-5 pt-1">
+    <div class="d-flex justify-content-between">
+        <div class="d-flex">
+            <div style="padding-top: 5px; cursor: pointer;">
+                <i class="icon-btn icon material-icons" id="backBtn">chevron_left</i>
+            </div>
+            <h5 class="text-center mb-4 ms-2 mt-1" id="requestTitle">Purchase Requests</h5>
+        </div>
+        <div class="d-flex gap-3 search-input">
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Export data"
+                    id="exportItem">arrow_upward</i>
+            </div>
+            <div>
+                <span data-bs-toggle="modal" data-bs-target="#addPrModal">
+                    <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                        data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="New PR" id="addPr">add</i>
+                </span>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Select item"
+                    id="selectItem">check</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Select all"
+                    id="selectAllItem">done_all</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
+                    id="deleteSelected">delete</i>
+            </div>
+            <div>
+                <i class="material-icons icon icon-btn" style="cursor: pointer; margin-top: 5px;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="View DRs"
+                    id="drBtn">file_download</i>
+            </div>
+        </div>
+        <div>
+            <input type="search" class="search-box search-width form-control rounded-5 font me-4" id="searchPulledItem"
+                placeholder="Search code or date">
+        </div>
+    </div>
+    <div class="table-container table-responsive">
+        <table class="table font table-hover" id="addedItemTable">
+            <thead id="tableHead">
+                <tr>
+                    <th id="checkboxColumn" style="width: 3rem; display: none;">
+                        <input type="checkbox" id="selectAllCheckbox">
+                    </th>
+                    <th>No.</th>
+                    <th>Code</th>
+                    <th style="min-width: 18rem;">Item</th>
+                    <th>QTY</th>
+                    <th>Unit</th>
+                    <th>Added by</th>
+                    <th style="width: 12rem;">Date</th>
+                    <th style="width: 4rem;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="pulledItemTable">
+
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Delete Item Modal -->
+<div class="modal" id="deleteItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body font p-4 pb-2">
+                <form method="post" id="deleteItemForm">
+                    <input type="hidden" id="deleteItemId">
+                    <div class="font mb-4">
+                        <p>Are sure to delete item <i><span id="deleteItemCode"></span> <span
+                                    id="deleteItemName"></span></i>?</p>
+                    </div>
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="addPrModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="1"
+    aria-labelledby="addPrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="addPrModalLabel">New Purchase Request</h6>
+            </div>
+            <form method="post" id="addPrForm">
+                <div class="modal-body font p-4 pb-2">
+                    <div class="row font mb-4">
+                        <div class="input-field col-8">
+                            <label class="mb-2 ms-2" for="addPrCode">Item</label>
+                            <div class="custom-datalist w-100">
+                                <input type="text" id="addPrItem" placeholder="Select item..." autocomplete="off"
+                                    class="search-box form-control rounded-5 font" />
+                                <ul id="addPrItems" class="options-list rounded-3"></ul>
+                            </div>
+
+                        </div>
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="addPrQuantity">Quantity</label>
+                            <input type="number" id="addPrQuantity" class="search-box form-control rounded-5 font"
+                                min="1">
+                        </div>
+                    </div>
+
+                    <div class="row font mb-4">
+
+                        <div class="input-field col-7">
+                            <label class="mb-2 ms-2" for="addDeliveredBy">Requested By</label>
+                            <input type="text" id="addDeliveredBy" class="search-box form-control rounded-5 font" value="Vios R.">
+                        </div>
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="addDate">Date</label>
+                            <input type="datetime-local" id="addDate" class="search-box form-control rounded-5 font">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3"
+                            data-bs-dismiss="modal">Discard</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

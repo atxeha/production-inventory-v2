@@ -9,8 +9,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   showToast: (message: string, success: boolean) => {
     window.postMessage({ type: "show-toast", message, success });
   },
-  updateItemQuantity: (data: any) =>
-    ipcRenderer.invoke("update-item-quantity", data),
+  updateItemQuantity: (data: any) => ipcRenderer.invoke("update-item-quantity", data),
   deleteItem: (item: number) => ipcRenderer.invoke("delete-item", item),
   deleteItemFromTable: (id: string, table: "PulledItem" | "AddedItem") => ipcRenderer.invoke("delete-item-from-table", id, table),
   editItem: (data: any) => ipcRenderer.invoke("edit-item", data),

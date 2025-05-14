@@ -50,6 +50,8 @@ export async function fetchPulledItems(searchQuery = "") {
             return;
         }
 
+        tableHead.style.display = "table-header-group";
+
         filteredItems.forEach((item, index) => {
             const row = document.createElement("tr");
 
@@ -81,8 +83,10 @@ export async function fetchPulledItems(searchQuery = "") {
                 <td>${item.releasedBy}</td>
                 <td>${item.receivedBy}</td>
                 <td>${formattedDate}</td>
-                <td>
-                    <i class="edit-icon icon-btn icon material-icons ms-3" data-bs-toggle="tooltip"
+                <td class=actions">
+                    <i data-delete-id="${item.id}" class="dlt-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
+                        data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Delete">delete</i>
+                    <i data-edit-id="${item.id}" class="edit-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Edit">edit</i>
                 </td>
             `;

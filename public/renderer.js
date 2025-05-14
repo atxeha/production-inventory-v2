@@ -15,11 +15,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function initNavigationListeners() {
         const viewPulledItem = document.getElementById("viewPulledItem");
         const viewRequest = document.getElementById("viewRequest");
+        const viewPr = document.getElementById("prBtn");
+        const viewDr = document.getElementById("drBtn");
 
         if (viewPulledItem) {
             viewPulledItem.addEventListener("click", async (e) => {
                 e.preventDefault();
-                console.log("clicked")
                 await loadPage("pulled.html");
             });
         }
@@ -27,8 +28,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (viewRequest) {
             viewRequest.addEventListener("click", async (e) => {
                 e.preventDefault();
-                console.log("clicked")
-                await loadPage("prDr.html");
+                await loadPage("pr.html");
+            });
+        }
+
+        if (viewPr) {
+            viewPr.addEventListener("click", async (e) => {
+                e.preventDefault();
+                await loadPage("pr.html");
+            });
+        }
+
+        if (viewDr) {
+            viewDr.addEventListener("click", async (e) => {
+                e.preventDefault();
+                await loadPage("dr.html");
             });
         }
 
@@ -98,14 +112,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // Attach scroll listener after content load
                 attachScrollListener();
+                const datalistModule = await import("./js/utils/customDatalist.js")
+                const utilsModule = await import("./js/utils/defaultDate.js");
 
-                await initNavigationListeners(page);
+                await initNavigationListeners();
 
                 if (page === "home.html") {
                     const homeModule = await import("./js/logics/home.js");
-                    const utilsModule = await import("./js/utils/defaultDate.js");
 
-                    const options = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set", ];
+                    const unitOptions = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set"];
+                    const staffOptions = ["Abao, E.", "Timbal, M.", "Vios, R."];
 
                     const searchItem = document.getElementById("searchItem");
                     let searchFilter = "";
@@ -121,11 +137,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                     
                     homeModule.initAddItem();
                     homeModule.initModalListeners();
-                    homeModule.initCustomDatalist(options, 'addUnit', 'addUnits');
+                    datalistModule.initCustomDatalist(unitOptions, 'addUnit', 'addUnits');
+                    datalistModule.initCustomDatalist(staffOptions, 'addedBy', 'addedBys');
+                    datalistModule.initCustomDatalist(staffOptions, 'pullReceivedBy', 'pullReceivedBys');
+                    datalistModule.initCustomDatalist(staffOptions, 'newUpdatedBy', 'newUpdatedBys');
+                    datalistModule.initCustomDatalist(unitOptions, 'editUnit', 'editUnits');
                     homeModule.fetchItems(searchFilter)
                     homeModule.displayLogs()
 
                     homeModule.initPullItem();
+                    homeModule.initUpdateItemQuantity();
+                    homeModule.initEditItem();
+                   homeModule.deleteAllLogs(); 
 
 
                     utilsModule.initDate("addDate", "pullDate", "newQuantityDate")
@@ -144,10 +167,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     // const options = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set", ];
 
-                    const searchItem = document.getElementById("searchItem");
+                    const searchItem = document.getElementById("searchPulledItem");
                     let searchFilter = "";
                     if (searchItem) {
-                        const savedFilter = localStorage.getItem("searchItem");
+                        const savedFilter = localStorage.getItem("searchPulledItem");
                         if (savedFilter) {
                             searchFilter = savedFilter;
                             searchItem.value = savedFilter;
@@ -167,10 +190,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (searchItem) {
                         searchItem.addEventListener("input", () => {
-                            localStorage.setItem("searchItem", searchItem.value);
-                            pulledModule.fetchItems(searchItem.value);
+                            localStorage.setItem("searchPulledItem", searchItem.value);
+                            pulledModule.fetchPulledItems(searchItem.value);
                         });
                     }
+                }
+                if (page === "pr.html") {
+                    const prDrModule = await import("./js/logics/pr.js");
+
+                    const options = await prDrModule.fetchItems();
+
+                    datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
+                    utilsModule.initDate("addDate");
                 }
 
 

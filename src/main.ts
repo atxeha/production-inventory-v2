@@ -6,7 +6,7 @@ import {
   getItems,
   pullItem,
   getPullItems,
-  // updateItemQuantity,
+  updateItemQuantity,
   // deleteItem,
   editItem,
   // deleteItemFromTable,
@@ -20,6 +20,7 @@ import {
 import { execSync } from "child_process";
 import * as XLSX from "xlsx";
 import {parse} from "csv-parse";
+import { nativeTheme } from "electron"
 
 const isDev = !app.isPackaged;
 
@@ -57,11 +58,12 @@ app.whenReady().then(() => {
     },
   });
 
+  nativeTheme.themeSource = "light";
+
   mainWindow.loadFile(path.join(app.getAppPath(), "public", "index.html"));
 
-  mainWindow.maximize();
+  // mainWindow.maximize();
 
-  // Apply the custom menu
   Menu.setApplicationMenu(menu);
 });
 
@@ -102,7 +104,7 @@ const menu = Menu.buildFromTemplate([
           }
         },
       },
-      { type: "separator" }, // Adds a divider
+      { type: "separator" },
       {
         label: "Exit",
         role: "quit",
@@ -172,13 +174,23 @@ ipcMain.handle("add-item", async (event, itemData) => {
     }
 });
 
+
+ipcMain.handle("update-item-quantity", async (event, data) => {
+  try {
+    const result = await updateItemQuantity(data.itemId, data.newQuantity, data.updatedBy, data.date, data.deliveredBy);
+    return result;
+  } catch (error) {
+    return { success: false, message: "Failed to update item quantity." };
+  }
+});
+
 ipcMain.handle("edit-item", async (event, newData) => {
   try {
     return editItem(
-      newData.id,
+      newData.itemId,
       newData.itemCode,
       newData.itemName,
-      newData.unit
+      newData.itemUnit
     )
   } catch (error) {
     return;
@@ -448,3 +460,4 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
     return { success: false, message: `Failed to delete items from ${tableName}.` + (error as Error).message };
   }
 });
+

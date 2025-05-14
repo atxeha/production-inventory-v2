@@ -50,6 +50,16 @@ console.log("Prisma Client Path:", path.dirname(require.resolve("@prisma/client"
 
 export { prisma };
 
+function isoDate(date: string) {
+  if (!date) {
+    throw new Error("Date parameter is undefined or null");
+  }
+  if (date.length === 16) {
+    return new Date(date + ":00");
+  }
+  return new Date(date);
+}
+
 export async function addItem(
   itemCode: string,
   itemName: string,
@@ -62,11 +72,7 @@ export async function addItem(
   isDelivered: boolean
 ) {
 
-  let isoDate = date;
-  if (date.length === 16) {
-    isoDate = date + ":00";
-  }
-  // Check if the item_code already exists
+  const iso = isoDate(date);
   const existingItem = await prisma.item.findUnique({
     where: { itemCode },
   });
@@ -85,7 +91,7 @@ export async function addItem(
       unit,
       withdrawn: withdrawn || 0,
       addedBy,
-      date: new Date(isoDate),
+      date: new Date(iso),
     },
   });
 
@@ -95,8 +101,8 @@ export async function addItem(
         itemId: newItem.id,
         deliveredQuantity: quantity,
         deliveredBy: deliveredBy,
-        addedBy: addedBy,
-        deliveredDate: new Date(isoDate),
+        receivedBy: addedBy,
+        deliveredDate: new Date(iso),
       },
     })
   }
@@ -124,7 +130,6 @@ export async function editItem(
   unit: string
 ) {
   try {
-    // Convert id to a number and validate it
     const itemId = Number(id);
 
     return await prisma.$transaction(async (tx) => {
@@ -156,10 +161,6 @@ export async function editItem(
       };
     });
   } catch (error) {
-    console.error(
-      "Error updating item information:",
-      (error as Error)?.message || "Unknown error"
-    );
     return {
       success: false,
       message: (error as Error)?.message || "An unknown error occurred",
@@ -241,54 +242,59 @@ export async function getPullItems() {
   }
 }
 
-// export async function updateItemQuantity(
-//   id: number,
-//   new_quantity: number,
-//   updated_by: string,
-//   date: Date
-// ) {
-//   try {
-//     return await prisma.$transaction(async (tx) => {
-//       const itemId = Number(id);
-//       const newQuantity = Number(new_quantity)
-//       // Step 1: Check if the item exists
-//       const item = await tx.item.findUnique({
-//         where: { id: itemId },
-//         // select: { quantity: true },
-//       });
+export async function updateItemQuantity(
+  id: number,
+  newQuantity: number,
+  updatedBy: string,
+  date: string,
+  deliveredBy: string
+) {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const iso = isoDate(date)
+      const itemId = Number(id);
+      const quantity = Number(newQuantity)
+      
+      const item = await tx.item.findUnique({
+        where: { id: itemId },
+      });
 
-//       if (!item) {
-//         return { success: false, message: "Item not found." };
-//       }
+      if (!item) {
+        return { success: false, message: "Item not found." };
+      }
+      
+      if (newQuantity < 0) {
+        return { success: false, message: "Quantity cannot be negative." };
+      }
 
-//       // Step 2: Prevent negative stock
-//       if (newQuantity < 0) {
-//         return { success: false, message: "Quantity cannot be negative." };
-//       }
+      await tx.item.update({
+        where: { id: itemId },
+        data: {
+          quantity: {increment: newQuantity},
+          updatedBy,
+          updatedOn: new Date(iso),
+        },
+      });
 
-//       // Step 3: Update the quantity and `updated_by`
-//       await tx.item.update({
-//         where: { id: itemId },
-//         data: {
-//           quantity: {increment: newQuantity},
-//           updated_by,
-//           date,
-//         },
-//       });
+      await tx.requestDelivered.create({
+        data: {
+          itemId: id,
+          deliveredQuantity: quantity,
+          deliveredBy: deliveredBy,
+          receivedBy: updatedBy,
+          deliveredDate: new Date(iso),
+        },
+      })
 
-//       return { success: true, message: "Quantity updated.", item: item };
-//     });
-//   } catch (error) {
-//     console.error(
-//       "Error updating item quantity:",
-//       (error as Error)?.message || "Unknown error"
-//     );
-//     return {
-//       success: false,
-//       message: (error as Error)?.message || "An unknown error occurred",
-//     };
-//   }
-// }
+      return { success: true, message: "Quantity updated.", item: item, };
+    });
+  } catch (error) {
+    return {
+      success: false,
+      message: (error as Error)?.message || "An unknown error occurred",
+    };
+  }
+}
 
 // export async function deleteItem(id: number) {
 //   try {
@@ -353,14 +359,11 @@ export async function getLog() {
 export async function deleteAllLogs() {
   try {
     const deletedLogs = await prisma.log.deleteMany();
-
     if (deletedLogs.count === 0) {
       return { success: false, message: "No logs to delete." };
     }
-    console.log("All logs deleted.");
     return { success: true, message: "All logs deleted."}
   } catch (error) {
-    console.error("Error deleting logs:", error);
     return { success: false, message: `An error occurs ${(error as Error).message}`}
   }
 }

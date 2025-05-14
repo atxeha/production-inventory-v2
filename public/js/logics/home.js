@@ -1,12 +1,55 @@
 function capitalizeWords(str) {
     return str
-        .toLowerCase() // Convert entire string to lowercase first
-        .split(" ") // Split into words
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter
-        .join(" "); // Join words back into a string
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
+async function getYears() {
+    try {
+        const items = await window.electronAPI.getItems();
+        const yearsSet = new Set();
+
+        items.forEach(item => {
+            if (item.PurchaseRequest && Array.isArray(item.PurchaseRequest)) {
+                item.PurchaseRequest.forEach(pr => {
+                    if (pr.requestedDate) {
+                        const year = new Date(pr.requestedDate).getFullYear();
+                        yearsSet.add(year);
+                    }
+                });
+            }
+        });
+
+        const uniqueYears = Array.from(yearsSet).sort((a, b) => a - b);
+        return uniqueYears;
+    } catch (error) {
+        console.error("Error fetching unique purchase request years:", error);
+        return [];
+    }
+}
+
+async function populatePrYearFilter() {
+    const prFilter = document.getElementById("prFilter");
+    if (!prFilter) return;
+
+    const years = await getYears();
+
+    prFilter.innerHTML = '<option class="text-center" value="">--</option>';
+
+    years.forEach(year => {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        option.classList.add("text-center");
+        prFilter.appendChild(option);
+    });
 }
 
 let items = []
+
+const tableBody = document.getElementById("itemsTableBody");
 
 export function initAddItem() {
     const addItemForm = document.getElementById("addItemForm");
@@ -54,7 +97,7 @@ export function initAddItem() {
                     const logData = {
                         itemId: response.item.id,
                         user: addedBy,
-                        log: quantity === 1 ? `Added ${quantity} new ${unit.toLowerCase()} of` : `Added ${quantity} new ${unit.toLowerCase()}s of`
+                        log: quantity === 1 ? `New item added: ${quantity} ${unit.toLowerCase()} of` : `New item added: ${quantity} ${unit.toLowerCase()}s of`
                     }
 
                     try {
@@ -64,7 +107,6 @@ export function initAddItem() {
                     }
 
                     displayLogs()
-
                 } else {
                     console.log(response.message)
                     window.electronAPI.showToast(response.message, response.success);
@@ -76,8 +118,73 @@ export function initAddItem() {
     }
 }
 
+export async function initEditItem() {
+    const form = document.getElementById("editItemForm");
+    const modal = new bootstrap.Modal(document.getElementById("editItemModal"));
+
+    const itemCode = document.getElementById("editItemCode");
+    const itemName = document.getElementById("editItemName");
+    const itemUnit = document.getElementById("editUnit");
+
+    let currentEditId = null;
+
+    if (tableBody) {
+        tableBody.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (target.classList.contains("edit-item")) {
+                event.preventDefault();
+                const id = target.dataset.editId;
+                currentEditId = id;
+
+                const item = items.find((item) => item.id == id);
+
+                itemCode.value = item.itemCode;
+                itemName.value = item.itemName;
+                itemUnit.value = item.unit;
+
+                modal.show();
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const code = itemCode.value.trim();
+            const name = capitalizeWords(itemName.value.trim());
+            const unit = itemUnit.value.trim();
+
+            if (!currentEditId || !unit || !code || !name) {
+                window.electronAPI.showToast("All fields are required.", false);
+                return;
+            }
+
+            const data = {
+                itemId: Number(currentEditId),
+                itemCode: code,
+                itemName: name,
+                itemUnit: unit,
+            };
+
+            try {
+                const response = await window.electronAPI.editItem(data);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+                    modal.hide();
+                    fetchItems();
+                } else {
+                    window.electronAPI.showToast(response.message, false);
+                }
+            } catch (error) {
+                window.electronAPI.showToast(error.message, false);
+            }
+        });
+    }
+}
+
 export async function initPullItem() {
-    const tableBody = document.getElementById("itemsTableBody");
     const pullItemForm = document.getElementById("pullItemForm");
     const pullItemModal = new bootstrap.Modal(document.getElementById("pullItemModal"));
 
@@ -85,71 +192,153 @@ export async function initPullItem() {
     const itemNameLabel = document.getElementById("itemNameLabel");
     const itemStockLabel = document.getElementById("itemStockLabel");
 
+    let currentPullId = null;
+
     if (tableBody) {
         tableBody.addEventListener("click", async (event) => {
             const target = event.target;
             if (target.classList.contains("pullItem")) {
                 event.preventDefault();
                 const id = target.dataset.pullId;
+                currentPullId = id;
 
                 const item = items.find((item) => item.id == id);
+
+                itemCodeLabel.textContent = item.itemCode;
+                itemNameLabel.textContent = item.itemName;
+                itemStockLabel.textContent = item.quantity;
+
+                pullItemModal.show();
+            }
+        });
+    }
+
+    if (pullItemForm) {
+        pullItemForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const quantity = parseInt(document.getElementById("pullQuantity").value.trim() || "0", 10);
+            const releasedBy = capitalizeWords(document.getElementById("pullReleasedBy").value.trim());
+            const receivedBy = capitalizeWords(document.getElementById("pullReceivedBy").value.trim());
+            const date = document.getElementById("pullDate").value.trim();
+
+            if (!currentPullId || !releasedBy || !quantity || !receivedBy) {
+                window.electronAPI.showToast("All fields are required.", false);
+                return;
+            }
+
+            const pullData = {
+                itemId: Number(currentPullId),
+                releasedQuantity: Number(quantity),
+                releasedBy: releasedBy,
+                receivedBy: receivedBy,
+                releasedDate: new Date(date),
+            };
+
+            try {
+                const response = await window.electronAPI.pullItem(pullData);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+                    pullItemModal.hide();
+                    fetchItems();
+
+                    const logData = {
+                        itemId: response.item.item.id,
+                        user: releasedBy,
+                        log: quantity === 1 ? `Pulled ${quantity} ${response.item.item.unit.toLowerCase()} of` : `Pulled ${quantity} ${response.item.item.unit.toLowerCase()}s of`
+                    }
+                    try {
+                        window.electronAPI.addLog(logData);
+                    } catch (error) {
+                        console.log(error)
+                    }
+
+                    displayLogs()
+                } else {
+                    window.electronAPI.showToast(response.message.message, false);
+                }
+            } catch (error) {
+                window.electronAPI.showToast(error.message, false);
+            }
+        });
+    }
+}
+
+export async function initUpdateItemQuantity() {
+    const form = document.getElementById("newQuantityItemForm");
+    const modal = new bootstrap.Modal(document.getElementById("updateItemQuantityModal"));
+
+    const itemCodeLabel = document.getElementById("newItemCode");
+    const itemNameLabel = document.getElementById("newItemName");
+    const itemStockLabel = document.getElementById("newItemStock");
+
+    let currentId = null;
+
+    if (form) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const quantity = parseInt(document.getElementById("newQuantity").value.trim() || "0", 10);
+            const updatedBy = capitalizeWords(document.getElementById("newUpdatedBy").value.trim());
+            const deliveredBy = capitalizeWords(document.getElementById("newDeliveredBy").value.trim());
+            const date = document.getElementById("newQuantityDate").value.trim();
+
+            if (!currentId || !updatedBy || !quantity) {
+                window.electronAPI.showToast("All fields are required.", false);
+                return;
+            }
+
+            const data = {
+                itemId: Number(currentId),
+                newQuantity: Number(quantity),
+                updatedBy: updatedBy,
+                date: date,
+                deliveredBy: deliveredBy,
+            };
+
+            try {
+                const response = await window.electronAPI.updateItemQuantity(data);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+                    modal.hide();
+                    fetchItems();
+
+                    const logData = {
+                        itemId: currentId,
+                        user: updatedBy,
+                        log: quantity === 1 ? `Added ${quantity} ${response.item.unit.toLowerCase()} of` : `Added ${quantity} ${response.item.unit.toLowerCase()}s of`
+                    }
+                    try {
+                        window.electronAPI.addLog(logData);
+                    } catch (error) {
+                        console.log(error)
+                    }
+
+                    displayLogs()
+                } else {
+                    window.electronAPI.showToast(response.message, false);
+                }
+            } catch (error) {
+                window.electronAPI.showToast(error.message, false);
+            }
+        });
+    }
+
+    if (tableBody) {
+        tableBody.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (target.classList.contains("new-quantity")) {
+                event.preventDefault();
+                currentId = target.dataset.quantityId;
+
+                const item = items.find((item) => item.id == currentId);
 
                 itemCodeLabel.textContent = item.itemCode
                 itemNameLabel.textContent = item.itemName
                 itemStockLabel.textContent = item.quantity
-                
-                if (pullItemForm) {
-                    pullItemForm.addEventListener("submit", async (event) => {
-                        event.preventDefault();
-
-                        const quantity = parseInt(document.getElementById("pullQuantity").value.trim() || "0", 10);
-                        const releasedBy = capitalizeWords(document.getElementById("pullReleasedBy").value.trim());
-                        const receivedBy = capitalizeWords(document.getElementById("pullReceivedBy").value.trim());
-                        const date = document.getElementById("pullDate").value.trim();
-
-                        if (!id || !releasedBy || !quantity || !receivedBy) {
-                            window.electronAPI.showToast("All fields are required.", false);
-                            return;
-                        }
-
-                        const pullData = {
-                            itemId: Number(id),
-                            releasedQuantity: Number(quantity),
-                            releasedBy: releasedBy,
-                            receivedBy: receivedBy,
-                            releasedDate: new Date(date),
-                        };
-
-                        try {
-                            const response = await window.electronAPI.pullItem(pullData);
-
-                            if (response.success) {
-                                window.electronAPI.showToast(response.message, true);
-                                pullItemModal.hide();
-                                fetchItems();
-
-                                const logData = {
-                                    itemId: response.item.item.id,
-                                    user: releasedBy,
-                                    log: quantity === 1 ? `Pulled ${quantity} ${response.item.item.unit.toLowerCase()} of` : `Pulled ${quantity} ${response.item.item.unit.toLowerCase()}s of item`
-                                }
-                                try {
-                                    window.electronAPI.addLog(logData);
-                                } catch (error) {
-                                    console.log(error)
-                                }
-
-                                displayLogs()
-                            } else {
-                                window.electronAPI.showToast(response.message.message, false);
-                            }
-                        } catch (error) {
-                            window.electronAPI.showToast(error.message, false);
-                        }
-                    });
-                }
-                
-            } 
+            }
         });
     }
 }
@@ -191,53 +380,9 @@ export async function initModalListeners() {
     });
 }
 
-export function initCustomDatalist(options, inputId, listId) {
-    const input = document.getElementById(inputId);
-    const optionsList = document.getElementById(listId);
-
-    if (!input || !optionsList) return;
-
-    // Function to render the list
-    function showOptions(filter = '') {
-        optionsList.innerHTML = '';
-        const filtered = options.filter(opt => opt.toLowerCase().includes(filter.toLowerCase()));
-
-        if (filtered.length > 0) {
-            optionsList.style.display = 'block';
-            filtered.forEach(opt => {
-                const li = document.createElement('li');
-                li.textContent = opt;
-                li.addEventListener('click', () => {
-                    input.value = opt;
-                    optionsList.style.display = 'none';
-                });
-                optionsList.appendChild(li);
-            });
-        } else {
-            optionsList.style.display = 'none';
-        }
-    }
-
-    // Show on focus (first click)
-    input.addEventListener('focus', () => {
-        showOptions(); // show all options initially
-    });
-
-    // Filter as user types
-    input.addEventListener('input', () => {
-        showOptions(input.value);
-    });
-
-    // Hide when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-datalist')) {
-            optionsList.style.display = 'none';
-        }
-    });
-}
-
 export async function fetchItems(searchQuery = "") {
     try {
+        populatePrYearFilter();
         items = await window.electronAPI.getItems();
         const itemTable = document.getElementById("itemsTable")
         const tableHead = document.getElementById("itemsTableHead")
@@ -301,11 +446,11 @@ export async function fetchItems(searchQuery = "") {
         <td class="text-center">${item.withdrawn}</td>
         <td class="actions">
             <span data-bs-toggle="modal" data-bs-target="#editItemModal">
-                <i id="edit-${item.id}" class="edit-icon icon-btn icon material-icons edit-item" data-bs-toggle="tooltip"
+                <i data-edit-id="${item.id}" id="edit-${item.id}" class="edit-icon icon-btn icon material-icons edit-item" data-bs-toggle="tooltip"
                     data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Edit information">edit</i>
             </span>
             <span data-bs-toggle="modal" data-bs-target="#updateItemQuantityModal">
-              <i id="new-quantity-${item.id
+              <i data-quantity-id="${item.id}" id="new-quantity-${item.id
                 }" class="icon-btn icon material-icons new-quantity" data-bs-toggle="tooltip"
                   data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Add stock"
                   style="cursor:pointer;">add</i>
@@ -336,69 +481,79 @@ export async function fetchItems(searchQuery = "") {
     }
 }
 
+export async function deleteAllLogs() {
+    const modal = new bootstrap.Modal(document.getElementById("deleteAllLogModal"));
+    const form = document.getElementById("deleteAllLogForm")
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const response = await window.electronAPI.deleteAllLogs();
+
+        if (response.success) {
+            window.electronAPI.showToast(response.message, true)
+            modal.hide();
+
+            displayLogs()
+        } else {
+            window.electronAPI.showToast(response.message, false)
+        }
+    })
+}
+
 export async function displayLogs() {
-    try {
-        const logs = await window.electronAPI.getLog();
-        const tableBody = document.getElementById("logTableBody");
-        const tableHead = document.getElementById("thead");
+    const logs = await window.electronAPI.getLog();
+    const tableBody = document.getElementById("logTableBody");
+    const tableHead = document.getElementById("thead");
 
-        tableBody.innerHTML = "";
+    tableBody.innerHTML = "";
 
+    const dltIcon = document.getElementById("dltIcon");
 
-
-        const dltIcon = document.getElementById("dltIcon");
-
-        if (logs.length === 0) {
-            tableHead.innerHTML = "";
-            tableBody.innerHTML = `
+    if (logs.length === 0) {
+        tableHead.style.display = "none";
+        tableBody.innerHTML = `
                 <tr>
                 <td colspan="3" class="text-center text-muted p-3">No history log</td>
                 </tr>
             `;
-            dltIcon.style.display = "none";
-            return;
-        } else {
-            dltIcon.style.display = "inline-block";
-        }
+        dltIcon.style.display = "none";
+    } else {
+        tableHead.style.display = "table-header-group";
+        dltIcon.style.display = "inline-block";
+    }
 
-        logs.forEach((log, index) => {
-            const row = document.createElement("tr");
+    logs.forEach((log, index) => {
+        const row = document.createElement("tr");
 
-            // Convert ISO Date to local time format (MM-DD-YYYY HH:mm A)
-            const formattedDate = new Date(log.createdAt)
-                .toLocaleString("en-US", {
-                    timeZone: "Asia/Manila",
-                    year: "2-digit",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hourCycle: "h12",
-                })
-                .replace("AM", "am")
-                .replace("PM", "pm")
-                .replace("/", "-")
-                .replace("/", "-")
-                .replace(",", " --");
+        const formattedDate = new Date(log.createdAt)
+            .toLocaleString("en-US", {
+                timeZone: "Asia/Manila",
+                year: "2-digit",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hourCycle: "h12",
+            })
+            .replace("AM", "am")
+            .replace("PM", "pm")
+            .replace("/", "-")
+            .replace("/", "-")
+            .replace(",", " --");
 
-            row.innerHTML = `
+        row.innerHTML = `
                 <td class="p-2">@${log.user}</td>
                 <td class="p-2">${log.log} <span class="log-item">(${log.item.itemCode} ${log.item.itemName})</span></td>
                 <td class="p-2" style="width: 10rem;">${formattedDate}</td>
             `;
-            tableBody.appendChild(row);
-        });
+        tableBody.appendChild(row);
+    });
 
-        // Reinitialize Bootstrap tooltips after adding new elements
-        var tooltipTriggerList = [].slice.call(
-            document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        );
-        tooltipTriggerList.map(
-            (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl)
-        );
-
-        console.log("Logs loaded successfully!");
-    } catch (error) {
-        console.error("Error fetching logs:", error);
-    }
+    var tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.map(
+        (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl)
+    );
 };
