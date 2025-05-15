@@ -144,7 +144,7 @@
                         <div class="input-field col-6">
                             <label class="mb-2 ms-2" for="pullReleasedBy">Released By</label>
                             <input type="text" id="pullReleasedBy" class="search-box form-control rounded-5 font"
-                                value="Vios R.">
+                                value="Vios, R.">
                         </div>
                         <div class="input-field col-6">
                             <label class="mb-2 ms-2" for="pullReceivedBy">Received By</label>
@@ -226,8 +226,12 @@
 
                         <div class="input-field col-6">
                             <label class="mb-2 ms-2" for="addDeliveredBy">Delivered By</label>
-                            <input type="text" id="addDeliveredBy" class="search-box form-control rounded-5 font"
-                                disabled>
+                                <div class="custom-datalist w-100">
+                                    <input type="text" id="addDeliveredBy" autocomplete="off" class="search-box form-control rounded-5 font" disabled/>
+                                    <ul id="addDeliveredBys" class="options-list rounded-3">
+                                
+                                    </ul>
+                                </div>
                         </div>
                     </div>
                     <div class="row font mb-3">
@@ -291,7 +295,12 @@
                     <div class="row font mb-4">
                         <div class="input-field col-6">
                             <label class="mb-2 ms-2" for="newDeliveredBy">Delivered By</label>
-                            <input type="text" id="newDeliveredBy" class="search-box form-control rounded-5 font">
+                            <div class="custom-datalist w-100">
+                                <input type="text" id="newDeliveredBy" autocomplete="off" class="search-box form-control rounded-5 font" />
+                                <ul id="newDeliveredBys" class="options-list rounded-3">
+                            
+                                </ul>
+                            </div>
                         </div>
                         <div class="input-field col-6">
                             <label class="mb-2 ms-2" for="newUpdatedBy">Received By</label>

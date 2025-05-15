@@ -1,26 +1,32 @@
-import { formatDate } from "../utils/utils.js";
+import { capitalizeWords, formatDate } from "../utils/utils.js";
 
-export async function fetchPulledItems(searchQuery = "") {
+export async function fetchDr(searchQuery = "") {
     try {
-        const items = await window.electronAPI.getPullItems();
+        // const items = await window.electronAPI.fetchPr();
 
-        const tableBody = document.getElementById("pulledTableBody");
-        const tableHead = document.getElementById("pulledTableHead");
-        const pulledTable = document.getElementById("pulledTable");
+        const items = await window.electronAPI.fetchPrDr({
+            tableName: "requestDelivered",
+            orderBy: "deliveredDate",
+            order: "desc"
+        });
+
+        const table = document.getElementById("drTable");
+        const tableHead = document.getElementById("drTableHead");
+        const tableBody = document.getElementById("drTableBody");
 
         tableBody.innerHTML = "";
 
         const filteredItems = items.filter(item => {
             const itemCodeMatch = item.item.itemCode.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const itemDate = formatDate(item.releasedDate);
+            const itemDate = formatDate(item.deliveredDate);
 
             const dateMatch = itemDate.includes(searchQuery);
             return itemCodeMatch || dateMatch;
         });
 
         if (filteredItems.length === 0) {
-            pulledTable.classList.remove("table-hover");
+            table.classList.remove("table-hover");
             tableHead.style.display = "none";
             tableBody.innerHTML = `
                 <tr>
@@ -35,7 +41,7 @@ export async function fetchPulledItems(searchQuery = "") {
         filteredItems.forEach((item, index) => {
             const row = document.createElement("tr");
 
-            const formattedDate = formatDate(item.releasedDate);
+            const formattedDate = formatDate(item.deliveredDate);
 
             row.innerHTML = `
                 <td class="checkboxCell" style="display: none;">
@@ -44,9 +50,9 @@ export async function fetchPulledItems(searchQuery = "") {
                 <td>${index + 1}</td>
                 <td>${item.item.itemCode}</td>
                 <td>${item.item.itemName}</td>
-                <td>${item.releasedQuantity}</td>
+                <td>${item.deliveredQuantity}</td>
                 <td>${item.item.unit}</td>
-                <td>${item.releasedBy}</td>
+                <td>${item.deliveredBy}</td>
                 <td>${item.receivedBy}</td>
                 <td>${formattedDate}</td>
                 <td class=actions">
@@ -58,7 +64,11 @@ export async function fetchPulledItems(searchQuery = "") {
             `;
             tableBody.appendChild(row);
         });
-        
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            const tooltipInstance = bootstrap.Tooltip.getInstance(el);
+            if (tooltipInstance) tooltipInstance.dispose();
+        });
+
         const tooltip = await import("../utils/tooltipUtil.js")
         tooltip.initializeTooltip();
     } catch (error) {

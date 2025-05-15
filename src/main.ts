@@ -37,6 +37,13 @@ if (!isDev) {
   }
 }
 
+function isoDate(date: string) {
+  if (date.length === 16) {
+    return new Date(date + ":00");
+  }
+  return new Date(date);
+}
+
 function capitalizeWords(str: string) {
   return str
       .toLowerCase() // Convert entire string to lowercase first
@@ -255,6 +262,108 @@ ipcMain.handle("delete-all-logs", async () => {
     return await deleteAllLogs();
   });
 
+ipcMain.handle("add-new-pr", async (event, data) => {
+  try {
+    const prId = await prisma.item.findUnique({
+      where: { itemCode: data.itemCode },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!prId) {
+      return { success: false, message: "Item not found." };
+    }
+
+    const newPr = await prisma.purchaseRequest.create({
+      data: {
+        itemId: Number(prId.id),
+        requestedQuantity: data.requestedQuantity,
+        requestedBy: data.requestedBy,
+        requestedDate: new Date(isoDate(data.requestedDate)),
+        },
+      include: {
+        item: true,
+      },
+    })
+
+    return {success: true, message: "Purchase Request added.", data: newPr}
+  } catch (err: any) {
+    return {success: false, message: err.message};
+  }
+});
+
+ipcMain.handle("fetch-pr-dr", async (event, { tableName, orderBy = "requestedDate", order = "desc" }) => {
+  try {
+    // Map table names to Prisma models and their includes
+    const tableConfig: Record<string, { model: any, include?: any }> = {
+      purchaseRequest: { model: prisma.purchaseRequest, include: { item: true } },
+      requestDelivered: { model: prisma.requestDelivered, include: { item: true } },
+      // Add more tables here if needed
+    };
+
+    const config = tableConfig[tableName];
+    if (!config) {
+      return { success: false, message: `Invalid table: ${tableName}` };
+    }
+
+    const items = await config.model.findMany({
+      where: { isDeleted: false },
+      include: config.include,
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+
+    return items;
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+});
+
+ipcMain.handle("get-unique-field", async (event, { table, field, relation, relationField }) => {
+  try {
+    // Map table names to Prisma models
+    const tableMap: Record<string, any> = {
+      pulledItem: prisma.pulledItem,
+      item: prisma.item,
+      purchaseRequest: prisma.purchaseRequest,
+      requestDelivered: prisma.requestDelivered,
+    };
+
+    const model = tableMap[table];
+    if (!model) {
+      return { success: false, message: `Invalid table: ${table}` };
+    }
+
+    let select: any = {};
+    if (field) select[field] = true;
+    if (relation && relationField) select[relation] = { select: { [relationField]: true } };
+
+    const results = await model.findMany({
+      where: { isDeleted: false },
+      distinct: field,
+      select,
+    });
+
+    // Flatten results if relation is used
+    let uniqueValues;
+    if (relation && relationField) {
+      uniqueValues = results
+        .map((r: any) => r[relation]?.[relationField])
+        .filter((v: any, i: number, arr: any[]) => v !== undefined && arr.indexOf(v) === i);
+    } else {
+      uniqueValues = results
+        .map((r: any) => r[field])
+        .filter((v: any, i: number, arr: any[]) => v !== undefined && arr.indexOf(v) === i);
+    }
+
+    return uniqueValues;
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+});
+
 ipcMain.on("navigate", (event, page) => {
   const filePath = path.join(app.getAppPath(), "public", page);
   console.log("Loading file:", filePath);
@@ -422,7 +531,7 @@ function formatRecord(record: any) {
 
 ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }: { tableName: string, selectedIds: (string | number)[] }) => {
   try {
-    const validTables = ["item", "pulledItem", "log", "addedItem"];
+    const validTables = ["item", "pulledItem", "log", "addedItem", "purchaseRequest", "requestDelivered"];
     if (!validTables.includes(tableName)) {
       return { success: false, message: `Invalid table: ${tableName} sdds` };
     }

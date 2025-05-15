@@ -337,10 +337,8 @@ export async function addLog(
                 log
             },
         })
-        console.log("Log saved.")
         return { success: true, message: "Log created." }
     } catch (error) {
-        console.log(`Error saving log: ${error}`)
         return { success: false, message: (error as Error).message }
     }
 }

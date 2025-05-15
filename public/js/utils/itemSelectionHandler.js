@@ -12,8 +12,10 @@ export function handleSelection(tableBodyId) {
                 const row = event.target.closest("tr");
                 if (event.target.checked) {
                     row.classList.add("selected-row");
+                    ifSelected = true;
                 } else {
                     row.classList.remove("selected-row");
+                    ifSelected = false;
                 }
             }
         });
@@ -93,6 +95,7 @@ export function deleteSelected(tableName, modulePath, postDeleteFunctionName) {
             if (response.success) {
                 window.electronAPI.showToast(response.message, response.success);
                 deleteItemModal.hide();
+                ifSelected = false;
                 
                 try {
                     const module = await import(modulePath);

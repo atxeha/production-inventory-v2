@@ -29,9 +29,11 @@
                     id="selectAllItem">done_all</i>
             </div>
             <div>
+                <span data-bs-toggle="modal" data-bs-target="#deleteItemModal">
                 <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
                     data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
                     id="deleteSelected">delete</i>
+                </span>
             </div>
             <div>
                 <i class="material-icons icon icon-btn" style="cursor: pointer; margin-top: 5px;" data-bs-placement="bottom"
@@ -40,28 +42,28 @@
             </div>
         </div>
         <div>
-            <input type="search" class="search-box search-width form-control rounded-5 font me-5" id="searchPulledItem"
+            <input type="search" class="search-box search-width form-control rounded-5 font me-5" id="searchPrItem"
                 placeholder="Search code or date">
         </div>
     </div>
     <div class="table-container table-responsive">
-        <table class="table font table-hover" id="addedItemTable">
-            <thead id="tableHead">
+        <table class="table font table-hover" id="prTable">
+            <thead id="prTableHead">
                 <tr>
                     <th id="checkboxColumn" style="width: 3rem; display: none;">
                         <input type="checkbox" id="selectAllCheckbox">
                     </th>
-                    <th>No.</th>
+                    <th></th>
                     <th>Code</th>
-                    <th style="min-width: 18rem;">Item</th>
+                    <th style="max-width: 18rem;">Item</th>
                     <th>QTY</th>
                     <th>Unit</th>
-                    <th>Added by</th>
+                    <th>Requested by</th>
                     <th style="width: 12rem;">Date</th>
                     <th style="width: 4rem;">Actions</th>
                 </tr>
             </thead>
-            <tbody id="pulledItemTable">
+            <tbody id="prTableBody">
 
             </tbody>
         </table>
@@ -74,10 +76,12 @@
         <div class="modal-content">
             <div class="modal-body font p-4 pb-2">
                 <form method="post" id="deleteItemForm">
-                    <input type="hidden" id="deleteItemId">
-                    <div class="font mb-4">
-                        <p>Are sure to delete item <i><span id="deleteItemCode"></span> <span
-                                    id="deleteItemName"></span></i>?</p>
+                    <div class="font mb-2">
+                        <p>Are you sure to delete selected item(s)?</p>
+                    </div>
+                    <div class="input-field d-flex mb-3">
+                        <input type="checkbox" id="dontShow" style="margin-top: 3px;">
+                        <label class="ms-2 text-muted dont-show" for="dontShow">Don't show again</label>
                     </div>
                     <div class="modal-footer font">
                         <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>
@@ -100,7 +104,7 @@
                 <div class="modal-body font p-4 pb-2">
                     <div class="row font mb-4">
                         <div class="input-field col-8">
-                            <label class="mb-2 ms-2" for="addPrCode">Item</label>
+                            <label class="mb-2 ms-2" for="addPrItem">Item</label>
                             <div class="custom-datalist w-100">
                                 <input type="text" id="addPrItem" placeholder="Select item..." autocomplete="off"
                                     class="search-box form-control rounded-5 font" />
@@ -118,12 +122,12 @@
                     <div class="row font mb-4">
 
                         <div class="input-field col-7">
-                            <label class="mb-2 ms-2" for="addDeliveredBy">Requested By</label>
-                            <input type="text" id="addDeliveredBy" class="search-box form-control rounded-5 font" value="Vios R.">
+                            <label class="mb-2 ms-2" for="addPrRequestedBy">Requested By</label>
+                            <input type="text" id="addPrRequestedBy" class="search-box form-control rounded-5 font" value="Vios, R.">
                         </div>
                         <div class="input-field col-5">
-                            <label class="mb-2 ms-2" for="addDate">Date</label>
-                            <input type="datetime-local" id="addDate" class="search-box form-control rounded-5 font">
+                            <label class="mb-2 ms-2" for="addPrDate">Date</label>
+                            <input type="datetime-local" id="addPrDate" class="search-box form-control rounded-5 font">
                         </div>
 
                     </div>

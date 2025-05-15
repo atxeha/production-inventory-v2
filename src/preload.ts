@@ -15,11 +15,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   editItem: (data: any) => ipcRenderer.invoke("edit-item", data),
   exportItems: (tableName: string) => ipcRenderer.invoke("export-items", tableName),
   importItems: () => ipcRenderer.invoke("import-items"),
-  addAddedItem: (data: any) => ipcRenderer.invoke("add-added-item", data),
   addLog: (data: any) => ipcRenderer.invoke("add-log", data),
   getLog: () => ipcRenderer.invoke("get-log"),
   deleteAllLogs: () => ipcRenderer.invoke("delete-all-logs"),
-  getAddedItems: () => ipcRenderer.invoke("get-added-items"),
+  addNewPr: (data: any) => ipcRenderer.invoke("add-new-pr", data),
+  fetchPrDr: (args: any) => ipcRenderer.invoke("fetch-pr-dr", args),
+  getUniqueField: (args: any) => ipcRenderer.invoke("get-unique-field", args),
   deleteSelectedItems: (tableName: string, selectedIds: (string | number)[]) => 
     ipcRenderer.invoke("delete-selected-items", { tableName, selectedIds }),
   onLoadPage: (callback: (event: Electron.IpcRendererEvent, page: string) => void) => {

@@ -11,3 +11,13 @@ export function hideTooltips(...filterIds) {
         }
     });
 }
+
+export function initializeTooltip(){
+    var tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+
+    tooltipTriggerList.map(
+        (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl)
+    );
+};

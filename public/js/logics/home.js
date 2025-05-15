@@ -1,10 +1,4 @@
-function capitalizeWords(str) {
-    return str
-        .toLowerCase()
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-}
+import { capitalizeWords, formatDate } from "../utils/utils.js";
 
 async function getYears() {
     try {
@@ -60,7 +54,7 @@ export function initAddItem() {
             const itemCode = document.getElementById("addItemCode").value.trim().toLowerCase();
             const itemName = capitalizeWords(document.getElementById("addItemName").value.trim());
             const quantity = parseInt(document.getElementById("addQuantity").value.trim());
-            const unit = document.getElementById("addUnit").value.trim();
+            const unit = capitalizeWords(document.getElementById("addUnit").value.trim());
             const withdrawn = parseInt(document.getElementById("addWithdrawn").value.trim());
             const addedBy = capitalizeWords(document.getElementById("addedBy").value.trim());
             const date = document.getElementById("addDate").value.trim();
@@ -150,9 +144,9 @@ export async function initEditItem() {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const code = itemCode.value.trim();
+            const code = itemCode.value.trim().toLowerCase();
             const name = capitalizeWords(itemName.value.trim());
-            const unit = itemUnit.value.trim();
+            const unit = capitalizeWords(itemUnit.value.trim());
 
             if (!currentEditId || !unit || !code || !name) {
                 window.electronAPI.showToast("All fields are required.", false);
@@ -396,21 +390,7 @@ export async function fetchItems(searchQuery = "") {
         const filteredItems = items.filter(item => {
             const itemCodeMatch = item.itemCode.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const itemDate = new Date(item.date)
-                .toLocaleString("en-US", {
-                    timeZone: "Asia/Manila",
-                    year: "2-digit",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hourCycle: "h12",
-                })
-                .replace("AM", "am")
-                .replace("PM", "pm")
-                .replace("/", "-")
-                .replace("/", "-")
-                .replace(",", " --");
+            const itemDate = formatDate(item.date);
 
             const dateMatch = itemDate.includes(searchQuery);
 
@@ -468,15 +448,9 @@ export async function fetchItems(searchQuery = "") {
     `;
             tableBody.appendChild(row);
         });
-        var tooltipTriggerList = [].slice.call(
-            document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        );
-        tooltipTriggerList.map(
-            (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl)
-        );
+        const tooltip = await import("../utils/tooltipUtil.js")
 
-        const tooltip = await import("../utils/hideTooltip.js")
-
+        tooltip.initializeTooltip();
         tooltip.hideTooltips("prFilter", "drFilter");
 
     } catch (error) {
@@ -529,21 +503,7 @@ export async function displayLogs() {
     logs.forEach((log, index) => {
         const row = document.createElement("tr");
 
-        const formattedDate = new Date(log.createdAt)
-            .toLocaleString("en-US", {
-                timeZone: "Asia/Manila",
-                year: "2-digit",
-                month: "numeric",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                hourCycle: "h12",
-            })
-            .replace("AM", "am")
-            .replace("PM", "pm")
-            .replace("/", "-")
-            .replace("/", "-")
-            .replace(",", " --");
+        const formattedDate = formatDate(log.createdAt);
 
         row.innerHTML = `
                 <td class="p-2">@${log.user}</td>
@@ -553,10 +513,6 @@ export async function displayLogs() {
         tableBody.appendChild(row);
     });
 
-    var tooltipTriggerList = [].slice.call(
-        document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    );
-    tooltipTriggerList.map(
-        (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl)
-    );
+    const tooltip = await import("../utils/tooltipUtil.js")
+    tooltip.initializeTooltip();
 };

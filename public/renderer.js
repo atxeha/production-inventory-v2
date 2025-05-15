@@ -128,10 +128,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (page === "home.html") {
                     const homeModule = await import("./js/logics/home.js");
                     const selectionHandlers = await import("./js/utils/itemSelectionHandler.js");
-                    
 
                     const unitOptions = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set"];
-                    const staffOptions = ["Abao, E.", "Timbal, M.", "Vios, R."];
+                    const staffOptions = await window.electronAPI.getUniqueField({ table: "item", field: "addedBy" });
+                    const deliveredByOptions = await window.electronAPI.getUniqueField({ table: "requestDelivered", field: "deliveredBy" });
 
                     const searchItem = document.getElementById("searchItem");
                     let searchFilter = "";
@@ -143,15 +143,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                         } else {
                             searchItem.value = searchFilter;
                         }
-                    } 
+                    }
+
+                    if (searchItem) {
+                        searchItem.addEventListener("input", () => {
+                            localStorage.setItem("searchItem", searchItem.value);
+                            homeModule.fetchItems(searchItem.value);
+                        });
+                    }
                     
-                    homeModule.initAddItem();
-                    homeModule.initModalListeners();
                     datalistModule.initCustomDatalist(unitOptions, 'addUnit', 'addUnits');
                     datalistModule.initCustomDatalist(staffOptions, 'addedBy', 'addedBys');
                     datalistModule.initCustomDatalist(staffOptions, 'pullReceivedBy', 'pullReceivedBys');
                     datalistModule.initCustomDatalist(staffOptions, 'newUpdatedBy', 'newUpdatedBys');
                     datalistModule.initCustomDatalist(unitOptions, 'editUnit', 'editUnits');
+                    datalistModule.initCustomDatalist(deliveredByOptions, 'newDeliveredBy', 'newDeliveredBys');
+                    datalistModule.initCustomDatalist(deliveredByOptions, 'addDeliveredBy', 'addDeliveredBys');
+
+                    homeModule.initAddItem();
+                    homeModule.initModalListeners();
                     homeModule.fetchItems(searchFilter)
                     homeModule.displayLogs()
 
@@ -165,20 +175,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     utilsModule.initDate("addDate", "pullDate", "newQuantityDate")
 
-                    if (searchItem) {
-                        searchItem.addEventListener("input", () => {
-                            localStorage.setItem("searchItem", searchItem.value);
-                            homeModule.fetchItems(searchItem.value);
-                        });
-                    }
                 }
 
                 if (page === "pulled.html") {
                     const pulledModule = await import("./js/logics/pulled.js");
-                    
-                    // const utilsModule = await import("./js/utils/defaultDate.js");
-
-                    // const options = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set", ];
 
                     const searchItem = document.getElementById("searchPulledItem");
                     let searchFilter = "";
@@ -190,18 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         } else {
                             searchItem.value = searchFilter;
                         }
-                    } 
-                    
-                    // pulledModule.initAddItem();
-                    // pulledModule.initModalListeners();
-                    // pulledModule.initCustomDatalist(options, 'addUnit', 'addUnits');
-                    pulledModule.fetchPulledItems(searchFilter);
-                    const selectionHandler = await import("./js/utils/itemSelectionHandler.js");
-                    selectionHandler.handleSelection("pulledTableBody");
-                    selectionHandler.deleteSelected("pulledItem", "../logics/pulled.js", "fetchPulledItems");
-
-
-                    // utilsModule.initDate("addDate", "pullDate", "newQuantityDate")
+                    }
 
                     if (searchItem) {
                         searchItem.addEventListener("input", () => {
@@ -209,22 +198,82 @@ document.addEventListener("DOMContentLoaded", async () => {
                             pulledModule.fetchPulledItems(searchItem.value);
                         });
                     }
+                    
+                    pulledModule.fetchPulledItems(searchFilter);
+                    const selectionHandler = await import("./js/utils/itemSelectionHandler.js");
+                    selectionHandler.handleSelection("pulledTableBody");
+                    selectionHandler.deleteSelected("pulledItem", "../logics/pulled.js", "fetchPulledItems");
+
                 }
                 if (page === "pr.html") {
-                    const prDrModule = await import("./js/utils/utils.js");
+                    const fetchItemModule = await import("./js/utils/utils.js");
+                    const prModule = await import("./js/logics/pr.js");
 
-                    const options = await prDrModule.fetchItems();
+                    const searchItem = document.getElementById("searchPrItem");
+                    let searchFilter = "";
+                    if (searchItem) {
+                        const savedFilter = localStorage.getItem("searchPrItem");
+                        if (savedFilter) {
+                            searchFilter = savedFilter;
+                            searchItem.value = savedFilter;
+                        } else {
+                            searchItem.value = searchFilter;
+                        }
+                    }
+
+                    if (searchItem) {
+                        searchItem.addEventListener("input", () => {
+                            localStorage.setItem("searchPrItem", searchItem.value);
+                            prModule.fetchPr(searchItem.value);
+                        });
+                    }
+
+                    const options = await fetchItemModule.fetchItems();
 
                     datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
-                    utilsModule.initDate("addDate");
+                    utilsModule.initDate("addPrDate");
+                    
+                    prModule.initAddNewPr();
+                    prModule.fetchPr(searchFilter);
+
+                    const selectionHandler = await import("./js/utils/itemSelectionHandler.js");
+                    selectionHandler.handleSelection("prTableBody");
+                    selectionHandler.deleteSelected("purchaseRequest", "../logics/pr.js", "fetchPr");
+
                 }
                 if (page === "dr.html") {
-                    const prDrModule = await import("./js/utils/utils.js");
+                    const fetchItemModule = await import("./js/utils/utils.js");
+                    const drModule = await import("./js/logics/dr.js");
 
-                    const options = await prDrModule.fetchItems();
+                    const searchItem = document.getElementById("searchDrItem");
+                    let searchFilter = "";
+                    if (searchItem) {
+                        const savedFilter = localStorage.getItem("searchDrItem");
+                        if (savedFilter) {
+                            searchFilter = savedFilter;
+                            searchItem.value = savedFilter;
+                        } else {
+                            searchItem.value = searchFilter;
+                        }
+                    }
 
-                    datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
-                    utilsModule.initDate("addDate");
+                    if (searchItem) {
+                        searchItem.addEventListener("input", () => {
+                            localStorage.setItem("searchDrItem", searchItem.value);
+                            drModule.fetchDr(searchItem.value);
+                        });
+                    }
+
+                    const options = await fetchItemModule.fetchItems();
+
+                    datalistModule.initCustomDatalist(options, "drItem", "drItems");
+                    datalistModule.initCustomDatalist(["Abao, E.", "Timbal, M.", "Vios, R."], "drReceivedBy", "drReceivedBys");
+                    utilsModule.initDate("drDate");
+
+                    drModule.fetchDr(searchFilter);
+                    const selectionHandler = await import("./js/utils/itemSelectionHandler.js");
+                    selectionHandler.handleSelection("drTableBody");
+                    selectionHandler.deleteSelected("requestDelivered", "../logics/dr.js", "fetchDr");
                 }
 
 
