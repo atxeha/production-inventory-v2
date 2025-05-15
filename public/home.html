@@ -6,9 +6,11 @@
 
         <div class="d-flex gap-3 search-input">
             <div>
-                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
-                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
-                    id="deleteSelected">delete</i>
+                <span data-bs-toggle="modal" data-bs-target="#deleteItemModal">
+                    <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                        data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
+                        id="deleteSelected">delete</i>
+                </span>
             </div>
             <div>
                 <span data-bs-toggle="modal" data-bs-target="#logModal">
@@ -55,9 +57,13 @@
                     title="View requests" id="viewRequest">forward_to_inbox</i>
             </div>
         </div>
-        <div>
-            <input name="searchItem" id="searchItem" type="search"
-                class="search-box search-width form-control rounded-5 font me-4" placeholder="Search item code">
+        <div class="d-flex justify-content-center">
+            <input name="searchItem" id="searchItem" type="search" class="search-box search-width form-control rounded-5 font"
+                placeholder="Search item code" style="margin-right: .55rem;">
+            <i class="mt-1 material-icons icon icon-btn me-3" style="cursor: pointer;" title="Clear preferences" id="clearPreference"
+                data-bs-placement="bottom"
+                data-bs-toggle="tooltip"
+                data-bs-custom-class="custom-tooltip">clear_all</i>
         </div>
     </div>
     <div class="table-container table-responsive">
@@ -313,8 +319,12 @@
         <div class="modal-content">
             <div class="modal-body font p-4 pb-2">
                 <form method="post" id="deleteItemForm">
-                    <div class="font mb-4">
-                        <p>Are sure to delete item selected item(s)?</p>
+                    <div class="font mb-2">
+                        <p>Are you sure to delete selected item(s)?</p>
+                    </div>
+                    <div class="input-field d-flex mb-3">
+                        <input type="checkbox" id="dontShow" style="margin-top: 3px;">
+                        <label class="ms-2 text-muted dont-show" for="dontShow">Don't show again</label>
                     </div>
                     <div class="modal-footer font">
                         <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>
@@ -420,9 +430,12 @@
         <div class="modal-content">
             <div class="modal-body font p-4 pb-2">
                 <form method="post" id="deleteAllLogForm">
-                    <input type="hidden" id="deleteAllLogId">
-                    <div class="font mb-4">
-                        <p>Are sure to delete history logs?</p>
+                    <div class="font mb-2">
+                        <p>Are you sure to delete all history logs?</p>
+                    </div>
+                    <div class="input-field d-flex mb-3">
+                        <input type="checkbox" id="dontShow" style="margin-top: 3px;">
+                        <label class="ms-2 text-muted dont-show" for="dontShow">Don't show again</label>
                     </div>
                     <div class="modal-footer font">
                         <button type="button" class="btn btn-link font p-0 me-3" data-bs-dismiss="modal">Close</button>

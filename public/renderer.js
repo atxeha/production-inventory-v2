@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
+    // const selectionHandler = await import("./js/utils/itemSelectionHandler.js")
+
     function backToHome() {
         const back = document.getElementById("backBtn");
         if (back) {
@@ -49,7 +51,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         backToHome();
     }
 
-    await loadPage("home.html");
+
+    const currentPage = localStorage.getItem("currentPage");
+    if (currentPage) {
+        await loadPage(currentPage);
+    } else {
+        await loadPage("home.html");
+    }
     await initNavigationListeners();
 
 
@@ -108,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 document.getElementById("main-content").innerHTML = bodyContent;
                 initializeTooltips();
 
-                // localStorage.setItem("currentPage", page);
+                localStorage.setItem("currentPage", page);
 
                 // Attach scroll listener after content load
                 attachScrollListener();
@@ -119,6 +127,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (page === "home.html") {
                     const homeModule = await import("./js/logics/home.js");
+                    const selectionHandlers = await import("./js/utils/itemSelectionHandler.js");
+                    
 
                     const unitOptions = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set"];
                     const staffOptions = ["Abao, E.", "Timbal, M.", "Vios, R."];
@@ -148,8 +158,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     homeModule.initPullItem();
                     homeModule.initUpdateItemQuantity();
                     homeModule.initEditItem();
-                   homeModule.deleteAllLogs(); 
+                    homeModule.deleteAllLogs(); 
 
+                    selectionHandlers.handleSelection("itemsTableBody");
+                    selectionHandlers.deleteSelected("item", "../logics/home.js", "fetchItems");
 
                     utilsModule.initDate("addDate", "pullDate", "newQuantityDate")
 
@@ -163,6 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (page === "pulled.html") {
                     const pulledModule = await import("./js/logics/pulled.js");
+                    
                     // const utilsModule = await import("./js/utils/defaultDate.js");
 
                     // const options = ["Bottle", "Box", "Bundle", "Piece", "Ream", "Roll", "Set", ];
@@ -182,8 +195,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // pulledModule.initAddItem();
                     // pulledModule.initModalListeners();
                     // pulledModule.initCustomDatalist(options, 'addUnit', 'addUnits');
-                    pulledModule.fetchPulledItems(searchFilter)
-                    // pulledModule.displayLogs()
+                    pulledModule.fetchPulledItems(searchFilter);
+                    const selectionHandler = await import("./js/utils/itemSelectionHandler.js");
+                    selectionHandler.handleSelection("pulledTableBody");
+                    selectionHandler.deleteSelected("pulledItem", "../logics/pulled.js", "fetchPulledItems");
 
 
                     // utilsModule.initDate("addDate", "pullDate", "newQuantityDate")
@@ -196,7 +211,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
                 if (page === "pr.html") {
-                    const prDrModule = await import("./js/logics/pr.js");
+                    const prDrModule = await import("./js/utils/utils.js");
+
+                    const options = await prDrModule.fetchItems();
+
+                    datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
+                    utilsModule.initDate("addDate");
+                }
+                if (page === "dr.html") {
+                    const prDrModule = await import("./js/utils/utils.js");
 
                     const options = await prDrModule.fetchItems();
 
@@ -214,10 +237,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadPage(page);
     });
 
-    // const currentPage = localStorage.getItem("currentPage");
-    // if (currentPage) {
-    //     await loadPage(currentPage);
-    // } else {
-    //     await window.electronAPI.navigate("home.html");
-    // }
 })

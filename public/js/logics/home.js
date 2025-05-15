@@ -49,8 +49,6 @@ async function populatePrYearFilter() {
 
 let items = []
 
-const tableBody = document.getElementById("itemsTableBody");
-
 export function initAddItem() {
     const addItemForm = document.getElementById("addItemForm");
     const addItemModal = new bootstrap.Modal(document.getElementById("addItemModal"));
@@ -121,6 +119,7 @@ export function initAddItem() {
 export async function initEditItem() {
     const form = document.getElementById("editItemForm");
     const modal = new bootstrap.Modal(document.getElementById("editItemModal"));
+    const tableBody = document.getElementById("itemsTableBody");
 
     const itemCode = document.getElementById("editItemCode");
     const itemName = document.getElementById("editItemName");
@@ -187,6 +186,7 @@ export async function initEditItem() {
 export async function initPullItem() {
     const pullItemForm = document.getElementById("pullItemForm");
     const pullItemModal = new bootstrap.Modal(document.getElementById("pullItemModal"));
+    const tableBody = document.getElementById("itemsTableBody");
 
     const itemCodeLabel = document.getElementById("itemCodeLabel");
     const itemNameLabel = document.getElementById("itemNameLabel");
@@ -221,6 +221,8 @@ export async function initPullItem() {
             const releasedBy = capitalizeWords(document.getElementById("pullReleasedBy").value.trim());
             const receivedBy = capitalizeWords(document.getElementById("pullReceivedBy").value.trim());
             const date = document.getElementById("pullDate").value.trim();
+
+            
 
             if (!currentPullId || !releasedBy || !quantity || !receivedBy) {
                 window.electronAPI.showToast("All fields are required.", false);
@@ -268,6 +270,7 @@ export async function initPullItem() {
 export async function initUpdateItemQuantity() {
     const form = document.getElementById("newQuantityItemForm");
     const modal = new bootstrap.Modal(document.getElementById("updateItemQuantityModal"));
+    const tableBody = document.getElementById("itemsTableBody");
 
     const itemCodeLabel = document.getElementById("newItemCode");
     const itemNameLabel = document.getElementById("newItemName");

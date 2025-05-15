@@ -201,6 +201,10 @@ input[type="checkbox"] {
     font-size: .9rem !important;
 }
 
+.dont-show {
+    font-size: 0.8rem !important;
+}
+
 .tooltip-inner {
     background-color:#4f4c5a !important;
     color: #ffffff !important;
