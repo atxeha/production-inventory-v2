@@ -265,9 +265,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     const options = await fetchItemModule.fetchItems();
+                    const deliveredByOptions = await window.electronAPI.getUniqueField({ table: "requestDelivered", field: "deliveredBy" });
+                    const staffOptions = await window.electronAPI.getUniqueField({ table: "item", field: "addedBy" });
 
                     datalistModule.initCustomDatalist(options, "drItem", "drItems");
-                    datalistModule.initCustomDatalist(["Abao, E.", "Timbal, M.", "Vios, R."], "drReceivedBy", "drReceivedBys");
+                    datalistModule.initCustomDatalist(staffOptions, "drReceivedBy", "drReceivedBys");
+                    datalistModule.initCustomDatalist(deliveredByOptions, "drDeliveredBy", "drDeliveredBys");
                     utilsModule.initDate("drDate");
 
                     drModule.fetchDr(searchFilter);
