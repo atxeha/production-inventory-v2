@@ -133,8 +133,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const staffOptions = await window.electronAPI.getUniqueField({ table: "item", field: "addedBy" });
                     const deliveredByOptions = await window.electronAPI.getUniqueField({ table: "requestDelivered", field: "deliveredBy" });
 
+                    const yearItem = document.getElementById("yearItem");
                     const searchItem = document.getElementById("searchItem");
+
                     let searchFilter = "";
+                    let yearFilter = "";
+                    
                     if (searchItem) {
                         const savedFilter = localStorage.getItem("searchItem");
                         if (savedFilter) {
@@ -145,12 +149,42 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                     }
 
+                    
+                    if (yearItem) {
+                        const savedYearFilter = localStorage.getItem("yearItem");
+                        console.log("Saved filter:", savedYearFilter);
+                        if (savedYearFilter) {
+                            yearFilter = savedYearFilter;
+                        }
+                    }
+                    if (yearItem) {
+                        yearItem.addEventListener("change", () => {
+                            const tooltipInstance =
+                              bootstrap.Tooltip.getInstance(yearItem);
+                            if (tooltipInstance) {
+                              tooltipInstance.hide();
+                            }
+                            
+                            localStorage.setItem("yearItem", yearItem.value);
+                            console.log("Year filter changed:", yearItem.value, 'and search filter:', searchItem.value);
+                            homeModule.fetchItems(searchItem.value, yearItem.value);
+                        });
+                    }
                     if (searchItem) {
                         searchItem.addEventListener("input", () => {
                             localStorage.setItem("searchItem", searchItem.value);
-                            homeModule.fetchItems(searchItem.value);
+                            homeModule.fetchItems(searchItem.value, yearItem.value);
                         });
                     }
+                    // Set the yearItem value after options are populated
+                    setTimeout(() => {
+                        if (yearItem && yearFilter) {
+                            yearItem.value = yearFilter;
+                        }
+                        homeModule.fetchItems(searchItem.value, yearItem.value);
+                    }, 100);
+
+                    
                     
                     datalistModule.initCustomDatalist(unitOptions, 'addUnit', 'addUnits');
                     datalistModule.initCustomDatalist(staffOptions, 'addedBy', 'addedBys');

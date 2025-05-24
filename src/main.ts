@@ -174,6 +174,7 @@ ipcMain.handle("add-item", async (event, itemData) => {
             itemData.deliveredBy,
             itemData.date,
             itemData.isDelivered,
+            itemData.releasedBy,
         );
         return { success: true, message: "Item successfully added.",  item: item};
     } catch (error: any) {
@@ -531,9 +532,9 @@ function formatRecord(record: any) {
 
 ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }: { tableName: string, selectedIds: (string | number)[] }) => {
   try {
-    const validTables = ["item", "pulledItem", "log", "addedItem", "purchaseRequest", "requestDelivered"];
+    const validTables = ["item", "pulledItem", "log", "purchaseRequest", "requestDelivered"];
     if (!validTables.includes(tableName)) {
-      return { success: false, message: `Invalid table: ${tableName} sdds` };
+      return { success: false, message: `Invalid table: ${tableName}` };
     }
 
     if (!selectedIds || selectedIds.length === 0) {
@@ -541,23 +542,35 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
     }
 
     // Convert IDs to numbers only for tables that require integer IDs
-    const tablesWithIntIds = ["item", "log"]; // Tables that use integer IDs
+    const tablesWithIntIds = ["item", "log"];
     const formattedIds =
-      tablesWithIntIds.includes(tableName) 
-        ? selectedIds.map(id => (typeof id === "string" ? parseInt(id, 10) : id)) // Convert only if needed
-        : selectedIds; // Keep as string if table allows string IDs
+      tablesWithIntIds.includes(tableName)
+        ? selectedIds.map(id => (typeof id === "string" ? parseInt(id, 10) : id))
+        : selectedIds;
 
-    // Delete only the selected items
-    const result = await (prisma as any)[tableName].updateMany({
-      where: {
-        id: {
-          in: formattedIds
+    let result;
+    if (tableName === "item") {
+      // Soft delete for "item" table
+      result = await (prisma as any)[tableName].updateMany({
+        where: {
+          id: {
+            in: formattedIds
+          }
+        },
+        data: {
+          isDeleted: true
         }
-      },
-      data: {
-        isDeleted: true
-      }
-    });
+      });
+    } else {
+      // Hard delete for other tables
+      result = await (prisma as any)[tableName].deleteMany({
+        where: {
+          id: {
+            in: formattedIds
+          }
+        }
+      });
+    }
 
     if (result.count === 0) {
       return { success: false, message: `No matching records found in ${tableName}.` };
@@ -566,7 +579,7 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
     return { success: true, message: `${result.count} item(s) deleted.` };
   } catch (error) {
     console.error("Delete error:", error);
-    return { success: false, message: `Failed to delete items from ${tableName}.` + (error as Error).message };
+    return { success: false, message: `Failed to delete items from ${tableName}. ${error instanceof Error ? error.message : ""}` };
   }
 });
 

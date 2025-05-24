@@ -4,51 +4,63 @@ export function initAddNewPr() {
     const form = document.getElementById("addPrForm");
     const modal = new bootstrap.Modal(document.getElementById("addPrModal"));
 
-    if (form && window.electronAPI) {
-        form.addEventListener("submit", async (event) => {
-            event.preventDefault();
+    if (form && window.electronAPI && !form._prListenerAdded) {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-            const rawCode = document.getElementById("addPrItem").value.trim().toLowerCase();
-            const quantity = parseInt(document.getElementById("addPrQuantity").value.trim());
-            const requestedBy = capitalizeWords(document.getElementById("addPrRequestedBy").value.trim());
-            const date = document.getElementById("addPrDate").value.trim();
+        const rawCode = document
+          .getElementById("addPrItem")
+          .value.trim()
+          .toLowerCase();
+        const quantity = parseInt(
+          document.getElementById("addPrQuantity").value.trim()
+        );
+        const requestedBy = capitalizeWords(
+          document.getElementById("addPrRequestedBy").value.trim()
+        );
+        const date = document.getElementById("addPrDate").value.trim();
 
-            const code = rawCode.split(" ")[0];
+        const code = rawCode.split(" ")[0];
 
-            const data = {
-                itemCode: code,
-                requestedQuantity: quantity,
-                requestedBy: requestedBy,
-                requestedDate: date,
+        const data = {
+          itemCode: code,
+          requestedQuantity: quantity,
+          requestedBy: requestedBy,
+          requestedDate: date,
+        };
+
+        if (!code || !requestedBy || !quantity || !date) {
+          window.electronAPI.showToast("All fields required.", false);
+          return;
+        }
+
+        try {
+          const response = await window.electronAPI.addNewPr(data);
+
+          if (response.success) {
+            window.electronAPI.showToast(response.message, response.success);
+            modal.hide();
+            // form.reset();
+            fetchPr();
+
+            const logData = {
+              itemId: response.data.item.id,
+              user: requestedBy,
+              log:
+                quantity === 1
+                  ? `Requested ${quantity} ${response.data.item.unit.toLowerCase()} of`
+                  : `Requested ${quantity} ${response.data.item.unit.toLowerCase()}s of`,
             };
 
-            if (!code || !requestedBy || !quantity || !date) {
-                window.electronAPI.showToast("All fields required.", false); return;
-            }
-
-            try {
-                const response = await window.electronAPI.addNewPr(data);
-
-                if (response.success) {
-                    window.electronAPI.showToast(response.message, response.success);
-                    modal.hide();
-                    // form.reset();
-                    fetchPr()
-
-                    const logData = {
-                        itemId: response.data.item.id,
-                        user: requestedBy,
-                        log: quantity === 1 ? `Requested ${quantity} ${response.data.item.unit.toLowerCase()} of` : `Requested ${quantity} ${response.data.item.unit.toLowerCase()}s of`
-                    }
-
-                    window.electronAPI.addLog(logData);
-                } else {
-                    window.electronAPI.showToast(response.message, response.success);
-                }
-            } catch (err) {
-                window.electronAPI.showToast(err.message, false);
-            }
-        });
+            window.electronAPI.addLog(logData);
+          } else {
+            window.electronAPI.showToast(response.message, response.success);
+          }
+        } catch (err) {
+          window.electronAPI.showToast(err.message, false);
+        }
+      });
+      form._prListenerAdded = true;
     }
 }
 

@@ -1,43 +1,69 @@
 import { capitalizeWords, formatDate } from "../utils/utils.js";
 
-async function getYears() {
+function setupWithdrawnReleasedByToggle() {
+  const withdrawnInput = document.getElementById("addWithdrawn");
+  const releasedByDiv = document.querySelector(".input-field.col-4.d-none");
+
+  if (withdrawnInput && releasedByDiv) {
+    withdrawnInput.addEventListener("input", () => {
+      const value = parseInt(withdrawnInput.value, 10);
+      if (value >= 1) {
+        releasedByDiv.classList.remove("d-none");
+      } else {
+        releasedByDiv.classList.add("d-none");
+      }
+    });
+  }
+}
+
+async function getYears(table, field) {
     try {
         const items = await window.electronAPI.getItems();
         const yearsSet = new Set();
 
-        items.forEach(item => {
-            if (item.PurchaseRequest && Array.isArray(item.PurchaseRequest)) {
-                item.PurchaseRequest.forEach(pr => {
-                    if (pr.requestedDate) {
-                        const year = new Date(pr.requestedDate).getFullYear();
-                        yearsSet.add(year);
-                    }
-                });
-            }
-        });
+        if (table && field) {
+            items.forEach(item => {
+                if (item[table] && Array.isArray(item[table])) {
+                    item[table].forEach(entry => {
+                        if (entry[field]) {
+                            const year = new Date(entry[field]).getFullYear();
+                            yearsSet.add(year);
+                        }
+                    });
+                }
+            });
+        } else if (field) {
+            // For direct item fields (e.g., "date" on item)
+            items.forEach(item => {
+                if (item[field]) {
+                    const year = new Date(item[field]).getFullYear();
+                    yearsSet.add(year);
+                }
+            });
+        }
 
         const uniqueYears = Array.from(yearsSet).sort((a, b) => a - b);
         return uniqueYears;
     } catch (error) {
-        console.error("Error fetching unique purchase request years:", error);
+        console.error("Error fetching unique years:", error);
         return [];
     }
 }
 
 async function populatePrYearFilter() {
-    const prFilter = document.getElementById("prFilter");
-    if (!prFilter) return;
+    const itemFilter = document.getElementById("yearItem");
+    if (!itemFilter) return;
 
-    const years = await getYears();
+    const itemYears = await getYears(null, "date");
 
-    prFilter.innerHTML = '<option class="text-center" value="">--</option>';
+    itemFilter.innerHTML = '<option class="text-center" value="">All</option>';
 
-    years.forEach(year => {
-        const option = document.createElement("option");
-        option.value = year;
-        option.textContent = year;
-        option.classList.add("text-center");
-        prFilter.appendChild(option);
+    itemYears.forEach(year => {
+        const option2 = document.createElement("option");
+        option2.value = year;
+        option2.textContent = year;
+        option2.classList.add("text-center");
+        itemFilter.appendChild(option2);
     });
 }
 
@@ -59,6 +85,7 @@ export function initAddItem() {
             const addedBy = capitalizeWords(document.getElementById("addedBy").value.trim());
             const date = document.getElementById("addDate").value.trim();
             const deliveredBy = capitalizeWords(document.getElementById("addDeliveredBy").value.trim());
+            const releasedBy = capitalizeWords(document.getElementById("addReleasedBy").value.trim());
             const isDelivered = document.getElementById("isDelivered").checked;
 
             const data = {
@@ -70,7 +97,8 @@ export function initAddItem() {
                 addedBy: addedBy,
                 date: date,
                 deliveredBy: deliveredBy,
-                isDelivered: isDelivered
+                isDelivered: isDelivered,
+                releasedBy: releasedBy || "",
             };
 
             if (!itemCode || !itemName || !quantity || !unit || !date) {
@@ -215,8 +243,6 @@ export async function initPullItem() {
             const releasedBy = capitalizeWords(document.getElementById("pullReleasedBy").value.trim());
             const receivedBy = capitalizeWords(document.getElementById("pullReceivedBy").value.trim());
             const date = document.getElementById("pullDate").value.trim();
-
-            
 
             if (!currentPullId || !releasedBy || !quantity || !receivedBy) {
                 window.electronAPI.showToast("All fields are required.", false);
@@ -377,9 +403,14 @@ export async function initModalListeners() {
     });
 }
 
-export async function fetchItems(searchQuery = "") {
+export async function fetchItems(searchQuery = "", yearFilter = "") {
     try {
-        populatePrYearFilter();
+        setupWithdrawnReleasedByToggle();
+        await populatePrYearFilter();
+        const itemYearFilter = document.getElementById("yearItem");
+        if (itemYearFilter && yearFilter) {
+            itemYearFilter.value = yearFilter;
+        }
         items = await window.electronAPI.getItems();
         const itemTable = document.getElementById("itemsTable")
         const tableHead = document.getElementById("itemsTableHead")
@@ -389,12 +420,17 @@ export async function fetchItems(searchQuery = "") {
 
         const filteredItems = items.filter(item => {
             const itemCodeMatch = item.itemCode.toLowerCase().includes(searchQuery.toLowerCase());
-
             const itemDate = formatDate(item.date);
-
             const dateMatch = itemDate.includes(searchQuery);
 
-            return itemCodeMatch || dateMatch;
+            // Year filter logic
+            let yearMatch = true;
+            if (yearFilter) {
+                const itemYear = new Date(item.date).getFullYear().toString();
+                yearMatch = itemYear === yearFilter;
+            }
+
+            return (itemCodeMatch || dateMatch) && yearMatch;
         });
 
         if (filteredItems.length === 0) {
@@ -411,8 +447,39 @@ export async function fetchItems(searchQuery = "") {
         tableHead.style.display = "table-header-group";
 
         filteredItems.forEach((item, index) => {
-            const row = document.createElement("tr");
+            // Sum up quantities for the selected year (or all if no yearFilter)
+            let prQuantity = 0;
+            let rdQuantity = 0;
+            let withdrawnQuantity = 0;
 
+            if (yearFilter) {
+                // Sum all PurchaseRequest quantities for the year
+                prQuantity = (item.PurchaseRequest || [])
+                    .filter(pr => pr.requestedDate && new Date(pr.requestedDate).getFullYear().toString() === yearFilter)
+                    .reduce((sum, pr) => sum + (Number(pr.requestedQuantity) || 0), 0);
+
+                // Sum all RequestDelivered quantities for the year
+                rdQuantity = (item.RequestDelivered || [])
+                    .filter(rd => rd.deliveredDate && new Date(rd.deliveredDate).getFullYear().toString() === yearFilter)
+                    .reduce((sum, rd) => sum + (Number(rd.deliveredQuantity) || 0), 0);
+
+                // Sum all PulledItem quantities for the year
+                withdrawnQuantity = (item.PulledItem || [])
+                    .filter(pulled => pulled.releasedDate && new Date(pulled.releasedDate).getFullYear().toString() === yearFilter)
+                    .reduce((sum, pulled) => sum + (Number(pulled.releasedQuantity) || 0), 0);
+            } else {
+                // Sum all if no year filter
+                prQuantity = (item.PurchaseRequest || [])
+                    .reduce((sum, pr) => sum + (Number(pr.requestedQuantity) || 0), 0);
+
+                rdQuantity = (item.RequestDelivered || [])
+                    .reduce((sum, rd) => sum + (Number(rd.deliveredQuantity) || 0), 0);
+
+                withdrawnQuantity = (item.PulledItem || [])
+                    .reduce((sum, pulled) => sum + (Number(pulled.releasedQuantity) || 0), 0);
+            }
+
+            const row = document.createElement("tr");
             row.setAttribute("style", "border-radius: 10px !important;")
 
             row.innerHTML = `
@@ -424,9 +491,9 @@ export async function fetchItems(searchQuery = "") {
         <td>${item.itemName}</td>
         <td>${item.unit}</td>
         <td class="text-center">${item.quantity}</td>
-        <td class="text-center">${item.PurchaseRequest[0]?.requestedQuantity ?? "--"}</td>
-        <td class="text-center">${item.RequestDelivered[0]?.deliveredQuantity ?? "--"}</td>
-        <td class="text-center">${item.withdrawn}</td>
+        <td class="text-center">${prQuantity}</td>
+        <td class="text-center">${rdQuantity}</td>
+        <td class="text-center">${withdrawnQuantity}</td>
         <td class="actions">
             <span data-bs-toggle="modal" data-bs-target="#editItemModal">
                 <i data-edit-id="${item.id}" id="edit-${item.id}" class="edit-icon icon-btn icon material-icons edit-item" data-bs-toggle="tooltip"

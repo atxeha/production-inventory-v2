@@ -69,25 +69,76 @@ export async function addItem(
   addedBy: string,
   deliveredBy: string,
   date: string,
-  isDelivered: boolean
+  isDelivered: boolean,
+  releasedBy: string
 ) {
-
   const iso = isoDate(date);
+
+  // Helper to create related records
+  async function createRelatedRecords(itemId: number) {
+    const promises = [];
+    if (isDelivered) {
+      promises.push(
+        prisma.requestDelivered.create({
+          data: {
+            itemId,
+            deliveredQuantity: quantity,
+            deliveredBy,
+            receivedBy: addedBy,
+            deliveredDate: new Date(iso),
+          },
+        })
+      );
+    }
+    if (withdrawn > 0) {
+      promises.push(
+        prisma.pulledItem.create({
+          data: {
+            itemId,
+            releasedQuantity: withdrawn,
+            releasedBy,
+            receivedBy: addedBy,
+            releasedDate: new Date(iso),
+          },
+        })
+      );
+    }
+    await Promise.all(promises);
+  }
+
   const existingItem = await prisma.item.findUnique({
     where: { itemCode },
   });
 
   if (existingItem) {
-    throw new Error(
-      `'${itemCode}' already exists. Add quantity for the item instead.`
-    );
+    if (existingItem.isDeleted) {
+      const newItem = await prisma.item.update({
+        where: { itemCode },
+        data: {
+          itemName,
+          quantity: withdrawn > 0 ? quantity - withdrawn : quantity,
+          unit,
+          withdrawn: withdrawn || 0,
+          addedBy,
+          date: new Date(iso),
+          isDeleted: false,
+        },
+      });
+
+      await createRelatedRecords(existingItem.id);
+      return newItem;
+    } else {
+      throw new Error(
+        `'${itemCode}' already exists. Add quantity for the item instead.`
+      );
+    }
   }
 
   const newItem = await prisma.item.create({
     data: {
       itemCode,
       itemName,
-      quantity,
+      quantity: withdrawn > 0 ? quantity - withdrawn : quantity,
       unit,
       withdrawn: withdrawn || 0,
       addedBy,
@@ -95,18 +146,7 @@ export async function addItem(
     },
   });
 
-  if (isDelivered) {
-    await prisma.requestDelivered.create({
-      data: {
-        itemId: newItem.id,
-        deliveredQuantity: quantity,
-        deliveredBy: deliveredBy,
-        receivedBy: addedBy,
-        deliveredDate: new Date(iso),
-      },
-    })
-  }
-  
+  await createRelatedRecords(newItem.id);
   return newItem;
 }
 
@@ -119,6 +159,7 @@ export async function getItems() {
     include: {
       PurchaseRequest: true,
       RequestDelivered: true,
+      PulledItem: true,
     }
   });
 }
