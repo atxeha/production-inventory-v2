@@ -7,35 +7,33 @@ import {
   pullItem,
   getPullItems,
   updateItemQuantity,
-  // deleteItem,
   editItem,
-  // deleteItemFromTable,
-  // addAddedItem,
+  deleteItemFromAnyTable,
   addLog,
   getLog,
   deleteAllLogs,
-  // getAddedItems,
   prisma
 } from "./database";
 import { execSync } from "child_process";
 import * as XLSX from "xlsx";
 import {parse} from "csv-parse";
-import { nativeTheme } from "electron"
+import { nativeTheme } from "electron";
+import { importItemsFromFile, importPulledItemsFromFile } from "./utils";
 
 const isDev = !app.isPackaged;
 
-if (!isDev) {
-  try {
-    console.log("Running Prisma Migration...");
-    const output = execSync("npx prisma migrate deploy", {
-      stdio: "pipe", // Capture logs
-      encoding: "utf-8", // Ensure readable output
-    });
-    console.log("Migration Output:\n", output);
-  } catch (error: any) {
-    console.error("Migration Error:\n", error.message);
-  }
-}
+// if (!isDev) {
+//   try {
+//     console.log("Running Prisma Migration...");
+//     const output = execSync("npx prisma migrate deploy", {
+//       stdio: "pipe", // Capture logs
+//       encoding: "utf-8", // Ensure readable output
+//     });
+//     console.log("Migration Output:\n", output);
+//   } catch (error: any) {
+//     console.error("Migration Error:\n", error.message);
+//   }
+// }
 
 function isoDate(date: string) {
   if (date.length === 16) {
@@ -46,10 +44,10 @@ function isoDate(date: string) {
 
 function capitalizeWords(str: string) {
   return str
-      .toLowerCase() // Convert entire string to lowercase first
-      .split(" ") // Split into words
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter
-      .join(" "); // Join words back into a string
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 }
 
 let mainWindow: BrowserWindow | null;
@@ -57,10 +55,10 @@ app.whenReady().then(() => {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    icon: path.join(__dirname, "../assets/icons/cpsc-logo.png"), // Set icon path
+    icon: path.join(__dirname, "../assets/icons/cpsc-logo.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"), // Ensure TypeScript transpiles this correctly
-      nodeIntegration: false, // Disable for security
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
       contextIsolation: true,
     },
   });
@@ -98,16 +96,7 @@ const menu = Menu.buildFromTemplate([
         label: "PR/DRs",
         click: () => {
           if (mainWindow) {
-            mainWindow.webContents.send("load-page", "prDr.html");
-          }
-        },
-      },
-      { type: "separator" },
-      {
-        label: "New Stock",
-        click: () => {
-          if (mainWindow) {
-            mainWindow.webContents.send("load-page", "home.html");
+            mainWindow.webContents.send("load-page", "pr.html");
           }
         },
       },
@@ -116,17 +105,6 @@ const menu = Menu.buildFromTemplate([
         label: "Exit",
         role: "quit",
       },
-    ],
-  },
-  {
-    label: "Edit",
-    submenu: [
-      { label: "Undo", role: "undo" },
-      { label: "Redo", role: "redo" },
-      { type: "separator" },
-      { label: "Cut", role: "cut" },
-      { label: "Copy", role: "copy" },
-      { label: "Paste", role: "paste" },
     ],
   },
   {
@@ -151,17 +129,10 @@ const menu = Menu.buildFromTemplate([
           shell.openExternal("https://www.facebook.com/a1yag/");
         },
       },
-      {
-        label: "About",
-        click: () => {
-          console.log("About clicked!");
-        },
-      },
     ],
   },
 ]);
 
-// Handle adding items
 ipcMain.handle("add-item", async (event, itemData) => {
     try {
         const item = await addItem(
@@ -207,9 +178,8 @@ ipcMain.handle("edit-item", async (event, newData) => {
 
 ipcMain.handle("get-items", async () => {
   try {
-    return getItems(); // Fetch and return all items
+    return getItems();
   } catch (error) {
-    console.error("Error fetching items:", error);
     return [];
   }
 });
@@ -225,8 +195,7 @@ ipcMain.handle("pull-item", async (event, pullData) => {
   if (item.success) {
     return { success: true, message: "Item successfully pulled.", item: item };
   } else {
-    console.log(item);
-    return { success: false, message: item }; // Return the error message
+    return { success: false, message: item };
   }
 });
 
@@ -234,7 +203,6 @@ ipcMain.handle("get-pull-items", async () => {
   try {
     return getPullItems();
   } catch (error) {
-    console.error("Error fetching pulled items.", error);
     return [];
   }
 });
@@ -296,11 +264,9 @@ ipcMain.handle("add-new-pr", async (event, data) => {
 
 ipcMain.handle("fetch-pr-dr", async (event, { tableName, orderBy = "requestedDate", order = "desc" }) => {
   try {
-    // Map table names to Prisma models and their includes
     const tableConfig: Record<string, { model: any, include?: any }> = {
       purchaseRequest: { model: prisma.purchaseRequest, include: { item: true } },
       requestDelivered: { model: prisma.requestDelivered, include: { item: true } },
-      // Add more tables here if needed
     };
 
     const config = tableConfig[tableName];
@@ -324,7 +290,6 @@ ipcMain.handle("fetch-pr-dr", async (event, { tableName, orderBy = "requestedDat
 
 ipcMain.handle("get-unique-field", async (event, { table, field, relation, relationField }) => {
   try {
-    // Map table names to Prisma models
     const tableMap: Record<string, any> = {
       pulledItem: prisma.pulledItem,
       item: prisma.item,
@@ -347,7 +312,6 @@ ipcMain.handle("get-unique-field", async (event, { table, field, relation, relat
       select,
     });
 
-    // Flatten results if relation is used
     let uniqueValues;
     if (relation && relationField) {
       uniqueValues = results
@@ -367,10 +331,8 @@ ipcMain.handle("get-unique-field", async (event, { table, field, relation, relat
 
 ipcMain.on("navigate", (event, page) => {
   const filePath = path.join(app.getAppPath(), "public", page);
-  console.log("Loading file:", filePath);
 
   if (!fs.existsSync(filePath)) {
-      console.error("File does not exist:", filePath);
       return;
   }
 
@@ -385,151 +347,6 @@ app.on("window-all-closed", () => {
   }
 });
 
-ipcMain.handle("export-items", async (event, { tableName, selectedIds }: { tableName: string, selectedIds: (string | number)[] }) => {
-    try {
-        const validTables = ["item", "pulledItem", "log", "addedItem"];
-        if (!validTables.includes(tableName)) {
-            return { success: false, message: `Invalid table: ${tableName}` };
-        }
-
-        if (!selectedIds || selectedIds.length === 0) {
-            return { success: false, message: "No items selected." };
-        }
-
-        // Fetch only the selected items
-        const data = await (prisma as any)[tableName].findMany({
-            where: { id: { in: selectedIds } }
-        });
-
-        if (!data.length) {
-            return { success: false, message: `No matching data found in ${tableName}.` };
-        }
-
-        // Define column mappings for each table
-        const columnMappings: Record<string, Record<string, string>> = {
-            item: {
-                item_code: "Code",
-                item_name: "Item",
-                quantity: "Quantity",
-                unit: "Unit",
-                added_by: "Added by",
-                date: "Date"
-            },
-            pulledItem: {
-                itemCode: "Code",
-                itemName: "Name",
-                releasedQuantity: "Quantity",
-                unit: "Unit",
-                releasedBy: "Released by",
-                receivedBy: "Received by",
-                releasedDate: "Date"
-            },
-            addedItem: {
-                itemCode: "Code",
-                itemName: "Name",
-                addedQuantity: "Quantity",
-                unit: "Unit",
-                addedBy: "Added by",
-                addedDate: "Date"
-            }
-        };
-
-        // Format data by renaming the columns
-        const formattedData = data.map(({ id, updated_by, updatedAt, ...rest }: any) => {
-            const formattedRow: Record<string, any> = {};
-            for (const key in rest) {
-                if (columnMappings[tableName]?.[key]) {
-                    formattedRow[columnMappings[tableName][key]] = rest[key];
-                }
-            }
-            return formattedRow;
-        });
-
-        const worksheet = XLSX.utils.json_to_sheet(formattedData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, tableName);
-
-        const { filePath } = await dialog.showSaveDialog({
-            title: `Save ${tableName}.xlsx`,
-            defaultPath: `${tableName}.xlsx`,
-            filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
-        });
-
-        if (!filePath) return;
-
-        XLSX.writeFile(workbook, filePath);
-        return { success: true, message: `${capitalizeWords(tableName)} exported.` };
-    } catch (error) {
-        console.error("Export error:", error);
-        return { success: false, message: `Failed to export ${tableName}.` };
-    }
-});
-
-
-ipcMain.handle("import-items", async () => {
-  try {
-    // Step 1: Open file dialog for selecting CSV or XLSX
-    const { filePaths, canceled } = await dialog.showOpenDialog({
-      title: "Select CSV or XLSX File",
-      filters: [
-        { name: "CSV & Excel Files", extensions: ["csv", "xlsx"] },
-      ],
-      properties: ["openFile"],
-    });
-
-    if (canceled || filePaths.length === 0) {
-      return;
-    }
-
-    const filePath = filePaths[0];
-
-    // Step 2: Check file extension
-    const fileExtension = filePath.split(".").pop()?.toLowerCase();
-    let records: any[] = [];
-
-    if (fileExtension === "csv") {
-      // Parse CSV File
-      const csvData = fs.readFileSync(filePath, "utf8");
-      const parser = parse(csvData, { columns: true, trim: true });
-
-      for await (const record of parser) {
-        records.push(formatRecord(record));
-      }
-    } else if (fileExtension === "xlsx") {
-      // Parse XLSX File
-      const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0]; // Get first sheet
-      const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-      records = sheetData.map(formatRecord);
-    } else {
-      return { success: false, message: "Invalid file format." };
-    }
-
-    // Step 3: Insert into database using Prisma
-    if (records.length > 0) {
-      await prisma.item.createMany({ data: records });
-      return { success: true, message: "Items imported." };
-    } else {
-      return { success: false, message: "No valid data found to import." };
-    }
-  } catch (error) {
-    console.error("Import error:", error);
-    return { success: false, message: "Failed to import items." };
-  }
-});
-
-function formatRecord(record: any) {
-  return {
-    item_code: record.item_code?.toUpperCase() || "",
-    item_name: record.item_name?.trim() || "",
-    quantity: Number(record.quantity) || 0,
-    unit: record.unit?.trim() || "pcs",
-    added_by: record.added_by?.trim() || "Admin",
-    date: record.date ? new Date(record.date) : new Date(),
-  };
-}
-
 ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }: { tableName: string, selectedIds: (string | number)[] }) => {
   try {
     const validTables = ["item", "pulledItem", "log", "purchaseRequest", "requestDelivered"];
@@ -541,7 +358,6 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
       return { success: false, message: "No items selected." };
     }
 
-    // Convert IDs to numbers only for tables that require integer IDs
     const tablesWithIntIds = ["item", "log"];
     const formattedIds =
       tablesWithIntIds.includes(tableName)
@@ -550,7 +366,6 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
 
     let result;
     if (tableName === "item") {
-      // Soft delete for "item" table
       result = await (prisma as any)[tableName].updateMany({
         where: {
           id: {
@@ -562,7 +377,6 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
         }
       });
     } else {
-      // Hard delete for other tables
       result = await (prisma as any)[tableName].deleteMany({
         where: {
           id: {
@@ -578,8 +392,34 @@ ipcMain.handle("delete-selected-items", async (event, { tableName, selectedIds }
 
     return { success: true, message: `${result.count} item(s) deleted.` };
   } catch (error) {
-    console.error("Delete error:", error);
     return { success: false, message: `Failed to delete items from ${tableName}. ${error instanceof Error ? error.message : ""}` };
   }
 });
 
+ipcMain.handle("delete-item-from-any-table", async (event, id, table) => {
+  return await deleteItemFromAnyTable(id, table);
+});
+
+ipcMain.handle("import-items-from-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: "Select Excel File",
+      filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
+      properties: ["openFile"]
+  });
+  if (canceled || filePaths.length === 0) {
+      return { success: false, message: "No file selected." };
+  }
+  return await importItemsFromFile(filePaths[0]);
+});
+
+ipcMain.handle("import-pulled-items-from-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: "Select Excel File",
+    filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
+    properties: ["openFile"],
+  });
+  if (canceled || filePaths.length === 0) {
+    return { success: false, message: "No file selected." };
+  }
+  return await importPulledItemsFromFile(filePaths[0]);
+});

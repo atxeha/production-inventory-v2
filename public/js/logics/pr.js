@@ -11,7 +11,7 @@ export function initAddNewPr() {
         const rawCode = document
           .getElementById("addPrItem")
           .value.trim()
-          .toLowerCase();
+          .toUpperCase();
         const quantity = parseInt(
           document.getElementById("addPrQuantity").value.trim()
         );
@@ -131,6 +131,6 @@ export async function fetchPr(searchQuery = "") {
         const tooltip = await import("../utils/tooltipUtil.js")
         tooltip.initializeTooltip();
     } catch (error) {
-        console.error("Error fetching items:", error);
+      return;
     }
 };

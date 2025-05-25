@@ -27,6 +27,7 @@ logs/
 *.sqlite3-journal
 .DS_Store
 Thumbs.db
+*.xlsx
 
 # Electron-specific exclusions
 /.eslintcache

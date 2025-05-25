@@ -13,15 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id         String   @id @default(cuid())
-  username   String   @unique
-  name       String
-  password   String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
 model Item {
   id         Int      @id @default(autoincrement())
   itemCode  String   @unique
@@ -38,7 +29,6 @@ model Item {
 
   Log Log[]
   PulledItem PulledItem[]
-  AddedItem AddedItem[]
   PurchaseRequest PurchaseRequest[]
   RequestDelivered RequestDelivered[]
 }
@@ -74,17 +64,6 @@ model PulledItem {
   receivedBy       String
   isDeleted Boolean @default(false)
   releasedDate     DateTime
-
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-}
-
-model AddedItem {
-  id            String   @id @default(cuid())
-  itemId      Int
-  addedQuantity Int
-  addedBy       String
-  isDeleted Boolean @default(false)
-  addedDate     DateTime
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }

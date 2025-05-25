@@ -1,52 +1,29 @@
-import { execSync } from "child_process";
 import path from "path";
 import { app } from "electron";
 import fs from "fs";
 import { PrismaClient } from "@prisma/client";
-import internal from "stream";
 
-// const prisma = new PrismaClient();
+const isDev = !app.isPackaged;
 
-// Determine database path
-const isDev = !app.isPackaged; // Check if running in development
-
-// Use the `db/` folder in development, but `userData` in production
 const dbFileName = "inventory.db";
 const dbPath = isDev
-  ? path.join(__dirname, "..", "db", dbFileName) // Development: Use `db/`
-  : path.join(app.getPath("userData"), dbFileName); // Production: Use `userData/`
-
-  isDev ? console.log("Database Path:", dbPath)
-  : console.log("Database Path (Production):", dbPath);
+  ? path.join(__dirname, "..", "db", dbFileName)
+  : path.join(app.getPath("userData"), dbFileName);
   
 process.env.DATABASE_URL = `file:${dbPath}`;
 
-console.log(dbPath)
-
-// Ensure the database file exists in production
 if (!isDev && !fs.existsSync(dbPath)) {
-  try {
-    // Copy the DB from the `app.asar` to `userData`
     const appDbPath = path.join(process.resourcesPath, dbFileName);
     fs.copyFileSync(appDbPath, dbPath);
-    console.log("Database copied to:", dbPath);
-  } catch (err) {
-    console.error("Database copy error:", err);
-  }
 }
 
-// Prisma Client
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: `file:${dbPath}?connection_limit=1`, // Ensure single connection
+      url: `file:${dbPath}?connection_limit=1`,
     },
   },
 });
-
-// Debugging output
-console.log("Prisma is using database path:", dbPath);
-console.log("Prisma Client Path:", path.dirname(require.resolve("@prisma/client")));
 
 export { prisma };
 
@@ -73,8 +50,6 @@ export async function addItem(
   releasedBy: string
 ) {
   const iso = isoDate(date);
-
-  // Helper to create related records
   async function createRelatedRecords(itemId: number) {
     const promises = [];
     if (isDelivered) {
@@ -129,7 +104,7 @@ export async function addItem(
       return newItem;
     } else {
       throw new Error(
-        `'${itemCode}' already exists. Add quantity for the item instead.`
+        `Code '${itemCode}' already exists.`
       );
     }
   }
@@ -219,10 +194,7 @@ export async function pullItem(
   try {
       return await prisma.$transaction(async (tx) => {
 
-        let isoDate = releasedDate;
-        if (releasedDate.length === 16) {
-          isoDate = releasedDate + ":00";
-        }
+        const iso = isoDate(releasedDate);
 
           const item = await tx.item.findUnique({
               where: { id: itemId },
@@ -241,7 +213,7 @@ export async function pullItem(
                   releasedQuantity,
                   releasedBy,
                   receivedBy,
-                  releasedDate,
+                  releasedDate: new Date(iso),
               },
           });
 
@@ -268,7 +240,6 @@ export async function pullItem(
 }
 
 export async function getPullItems() {
-  try {
     return await prisma.pulledItem.findMany({
       where: { isDeleted: false },
       orderBy: {
@@ -278,9 +249,6 @@ export async function getPullItems() {
       item: true,
     }
     });
-  } catch (error) {
-    console.log(error)
-  }
 }
 
 export async function updateItemQuantity(
@@ -337,33 +305,6 @@ export async function updateItemQuantity(
   }
 }
 
-// export async function deleteItem(id: number) {
-//   try {
-//     const itemId = Number(id);
-
-//     return await prisma.$transaction(async (tx) => {
-//       const item = await tx.item.findUnique({
-//         where: { id: itemId },
-//       });
-
-//       await tx.item.delete({
-//         where: { id: itemId },
-//       });
-
-//       return { success: true, message: "Item deleted." };
-//     });
-//   } catch (error) {
-//     console.error(
-//       "Error deleting item:",
-//       (error as Error)?.message || "Unknown error"
-//     );
-//     return {
-//       success: false,
-//       message: (error as Error)?.message || "An unknown error occurred",
-//     };
-//   }
-// }
-
 export async function addLog(
     itemId: number,
     user: string,
@@ -407,61 +348,27 @@ export async function deleteAllLogs() {
   }
 }
 
-// export async function addAddedItem(
-//     itemCode: string,
-//     itemName: string,
-//     addedQuantity: number,
-//     unit: string,
-//     addedBy: string
-// ) {
-//     try {
-//         const quantity = Number(addedQuantity)
-//         await prisma.addedItem.create({
-//             data: {
-//                 itemCode,
-//                 itemName,
-//                 addedQuantity: quantity,
-//                 unit,
-//                 addedBy,
-//             },
-//         })
-//         console.log("Added item recorded.")
-//         return {success:true, message: "Item recorded."}
-//     } catch (error) {
-//         console.log(`Error saving item: ${error}`)
-//         return { success: false, message: (error as Error).message}
-//     }
-// }
+export async function deleteItemFromAnyTable(id: string, table: string) {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const tableMap: Record<string, any> = {
+        item: tx.item,
+        PurchaseRequest: tx.purchaseRequest,
+        RequestDelivered: tx.requestDelivered,
+        PulledItem: tx.pulledItem,
+      };
 
-// export async function getAddedItems() {
-//     try {
-//         return await prisma.addedItem.findMany({
-//           orderBy: {
-//             addedDate: "desc",
-//         },
-//         });
-//     } catch (error) {
-//         console.log(error)
-//     }
-// }
-
-export async function deleteItemFromTable(id: string, table: "PulledItem" | "AddedItem") {
-    try {
-        return await prisma.$transaction(async (tx) => {
-            if (table === "PulledItem") {
-                await tx.pulledItem.delete({ where: { id } });
-            } else {
-                await tx.addedItem.delete({ where: { id } });
-            }
-            console.log(`${table} item with ID ${id} deleted.`);
-            return { success: true, message: `${table} deleted.` };
-        });
-    } catch (error) {
-        console.error(`Error deleting item from ${table}:`, (error as Error)?.message || "Unknown error");
-        return {
-            success: false,
-            message: (error as Error)?.message || "An unknown error occurred",
-        };
-    }
+      const model = tableMap[table];
+      if (model && typeof model.delete === "function") {
+        const deletedItem = await model.delete({ where: { id } });
+        return { success: true, message: `Item deleted.` };
+      }
+    });
+  } catch (error) {
+    return {
+      success: false,
+      message: (error as Error)?.message || "An unknown error occurred",
+    };
+  }
 }
 

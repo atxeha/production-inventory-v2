@@ -9,6 +9,11 @@
         <div class="d-flex gap-3 search-input">
             <div>
                 <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Import data"
+                    id="importItem">arrow_downward</i>
+            </div>
+            <div>
+                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
                     data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Export data"
                     id="exportItem">arrow_upward</i>
             </div>
@@ -57,7 +62,7 @@
                     <th>Released by</th>
                     <th>Received by</th>
                     <th style="width: 12rem;">Date</th>
-                    <th style="width: 4rem;">Actions</th>
+                    <th style="width: 3rem;"></th>
                 </tr>
             </thead>
             <tbody id="pulledTableBody">

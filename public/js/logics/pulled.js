@@ -52,8 +52,6 @@ export async function fetchPulledItems(searchQuery = "") {
                 <td class=actions">
                     <i data-delete-id="${item.id}" class="dlt-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Delete">delete</i>
-                    <i data-edit-id="${item.id}" class="edit-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
-                        data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Edit">edit</i>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -62,6 +60,31 @@ export async function fetchPulledItems(searchQuery = "") {
         const tooltip = await import("../utils/tooltipUtil.js")
         tooltip.initializeTooltip();
     } catch (error) {
-        console.error("Error fetching items:", error);
+        return;
     }
 };
+
+
+export function initImportItem(search) {
+  const importBtn = document.getElementById("importItem");
+  if (
+    importBtn &&
+    window.electronAPI?.importPulledItemsFromFile &&
+    !importBtn._importListenerAdded
+  ) {
+    importBtn.addEventListener("click", async () => {
+      const result = await window.electronAPI.importPulledItemsFromFile();
+      if (result && result.success) {
+        window.electronAPI.showToast(result.message, true);
+        // Optionally refresh your items table here:
+        fetchPulledItems(search);
+      } else {
+        window.electronAPI.showToast(
+          result?.message || "Import failed.",
+          false
+        );
+      }
+    });
+    importBtn._importListenerAdded = true;
+  }
+}

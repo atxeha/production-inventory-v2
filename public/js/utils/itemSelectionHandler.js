@@ -69,6 +69,48 @@ export function handleSelection(tableBodyId) {
         });
     }
 
+    // Unselect items and hide checkboxes when clicking outside the table/cells
+    document.addEventListener("mousedown", function (event) {
+        const table = document.getElementById(tableBodyId)?.closest("table");
+        const isCheckboxCell = event.target.closest(".checkboxCell");
+        const isTable = table && table.contains(event.target);
+    
+        // Exclude clicks on icons, buttons, and checkboxes outside the cell
+        const isIconOrButton =
+            event.target.closest("button") ||
+            event.target.closest("i") ||
+            event.target.tagName === "BUTTON" ||
+            event.target.tagName === "I";
+    
+        // Exclude clicks on any checkbox not inside a .checkboxCell
+        const isCheckboxOutsideCell =
+            event.target.type === "checkbox" && !event.target.closest(".checkboxCell");
+    
+        // Exclude if any Bootstrap modal is open
+        const isModalOpen = !!document.querySelector('.modal.show');
+    
+        if (
+            !isCheckboxCell &&
+            !isTable &&
+            !isIconOrButton &&
+            !isCheckboxOutsideCell &&
+            !isModalOpen &&
+            checkboxColumn &&
+            checkboxColumn.style.display !== "none"
+        ) {
+            checkboxColumn.style.display = "none";
+            document.querySelectorAll(".checkboxCell").forEach(cell => {
+                cell.style.display = "none";
+            });
+            document.querySelectorAll(".rowCheckbox").forEach(checkbox => {
+                checkbox.checked = false;
+                const row = checkbox.closest("tr");
+                if (row) row.classList.remove("selected-row");
+            });
+            ifSelected = false;
+        }
+    });
+
     removeCellBg();
 }
 
@@ -97,20 +139,12 @@ export function deleteSelected(tableName, modulePath, postDeleteFunctionName) {
                 deleteItemModal.hide();
                 ifSelected = false;
                 
-                try {
                     const module = await import(modulePath);
                     if (typeof module[postDeleteFunctionName] === "function") {
-                        module[postDeleteFunctionName](""); // Pass any argument you need
-                    } else {
-                        console.warn(`Function ${postDeleteFunctionName} not found in ${modulePath}`);
+                        module[postDeleteFunctionName]("");
                     }
-                } catch (err) {
-                    console.error("Error loading module or calling function:", err);
-                }
             }
         });
     }
 }
 
-// Call the combined function to attach event listeners
-// handleSelection();

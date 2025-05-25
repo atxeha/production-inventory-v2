@@ -9,22 +9,30 @@ contextBridge.exposeInMainWorld("electronAPI", {
   showToast: (message: string, success: boolean) => {
     window.postMessage({ type: "show-toast", message, success });
   },
-  updateItemQuantity: (data: any) => ipcRenderer.invoke("update-item-quantity", data),
+  updateItemQuantity: (data: any) =>
+    ipcRenderer.invoke("update-item-quantity", data),
   deleteItem: (item: number) => ipcRenderer.invoke("delete-item", item),
-  deleteItemFromTable: (id: string, table: "PulledItem" | "AddedItem") => ipcRenderer.invoke("delete-item-from-table", id, table),
+  deleteItemFromTable: (id: string, table: "PulledItem" | "AddedItem") =>
+    ipcRenderer.invoke("delete-item-from-table", id, table),
   editItem: (data: any) => ipcRenderer.invoke("edit-item", data),
-  exportItems: (tableName: string) => ipcRenderer.invoke("export-items", tableName),
-  importItems: () => ipcRenderer.invoke("import-items"),
+  exportItems: (tableName: string) =>
+    ipcRenderer.invoke("export-items", tableName),
+  importItemsFromFile: () => ipcRenderer.invoke("import-items-from-file"),
+  importPulledItemsFromFile: () => ipcRenderer.invoke("import-pulled-items-from-file"),
   addLog: (data: any) => ipcRenderer.invoke("add-log", data),
   getLog: () => ipcRenderer.invoke("get-log"),
   deleteAllLogs: () => ipcRenderer.invoke("delete-all-logs"),
   addNewPr: (data: any) => ipcRenderer.invoke("add-new-pr", data),
   fetchPrDr: (args: any) => ipcRenderer.invoke("fetch-pr-dr", args),
   getUniqueField: (args: any) => ipcRenderer.invoke("get-unique-field", args),
-  deleteSelectedItems: (tableName: string, selectedIds: (string | number)[]) => 
+  deleteSelectedItems: (tableName: string, selectedIds: (string | number)[]) =>
     ipcRenderer.invoke("delete-selected-items", { tableName, selectedIds }),
-  onLoadPage: (callback: (event: Electron.IpcRendererEvent, page: string) => void) => {
+  onLoadPage: (
+    callback: (event: Electron.IpcRendererEvent, page: string) => void
+  ) => {
     ipcRenderer.on("load-page", callback);
-  }
+  },
+  deleteItemFromAnyTable: (id: string, table: string) =>
+    ipcRenderer.invoke("delete-item-from-any-table", id, table),
 });
 

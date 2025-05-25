@@ -77,7 +77,7 @@ export function initAddItem() {
         addItemForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const itemCode = document.getElementById("addItemCode").value.trim().toLowerCase();
+            const itemCode = document.getElementById("addItemCode").value.trim().toUpperCase();
             const itemName = capitalizeWords(document.getElementById("addItemName").value.trim());
             const quantity = parseInt(document.getElementById("addQuantity").value.trim());
             const unit = capitalizeWords(document.getElementById("addUnit").value.trim());
@@ -109,7 +109,6 @@ export function initAddItem() {
                 const response = await window.electronAPI.addItem(data);
 
                 if (response.success) {
-                    console.log(response.message)
                     window.electronAPI.showToast(response.message, response.success);
                     addItemModal.hide();
                     fetchItems()
@@ -123,12 +122,11 @@ export function initAddItem() {
                     try {
                         window.electronAPI.addLog(logData);
                     } catch (error) {
-                        console.log(error)
+                        return;
                     }
 
                     displayLogs()
                 } else {
-                    console.log(response.message)
                     window.electronAPI.showToast(response.message, response.success);
                 }
             } catch (err) {
@@ -172,7 +170,7 @@ export async function initEditItem() {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const code = itemCode.value.trim().toLowerCase();
+            const code = itemCode.value.trim().toUpperCase();
             const name = capitalizeWords(itemName.value.trim());
             const unit = capitalizeWords(itemUnit.value.trim());
 
@@ -273,7 +271,7 @@ export async function initPullItem() {
                     try {
                         window.electronAPI.addLog(logData);
                     } catch (error) {
-                        console.log(error)
+                        return;
                     }
 
                     displayLogs()
@@ -336,7 +334,7 @@ export async function initUpdateItemQuantity() {
                     try {
                         window.electronAPI.addLog(logData);
                     } catch (error) {
-                        console.log(error)
+                        return;
                     }
 
                     displayLogs()
@@ -521,7 +519,7 @@ export async function fetchItems(searchQuery = "", yearFilter = "") {
         tooltip.hideTooltips("prFilter", "drFilter");
 
     } catch (error) {
-        console.error("Error fetching items:", error);
+        return;
     }
 }
 
@@ -583,3 +581,25 @@ export async function displayLogs() {
     const tooltip = await import("../utils/tooltipUtil.js")
     tooltip.initializeTooltip();
 };
+
+export function initImportItem(search) {
+  const importBtn = document.getElementById("importItem");
+  if (importBtn && window.electronAPI?.importItemsFromFile &&
+    !importBtn._importListenerAdded) {
+    importBtn.addEventListener("click", async () => {
+      const result = await window.electronAPI.importItemsFromFile();
+      if (result && result.success) {
+        window.electronAPI.showToast(result.message, true);
+        // Optionally refresh your items table here:
+        fetchItems(search);
+      } else {
+        window.electronAPI.showToast(
+          result?.message || "Import failed.",
+          false
+        );
+      }
+    });
+    importBtn._importListenerAdded = true;
+  }
+}
+
