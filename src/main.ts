@@ -14,40 +14,14 @@ import {
   deleteAllLogs,
   prisma
 } from "./database";
-import { execSync } from "child_process";
-import * as XLSX from "xlsx";
-import {parse} from "csv-parse";
 import { nativeTheme } from "electron";
 import { importItemsFromFile, importPulledItemsFromFile } from "./utils";
-
-const isDev = !app.isPackaged;
-
-// if (!isDev) {
-//   try {
-//     console.log("Running Prisma Migration...");
-//     const output = execSync("npx prisma migrate deploy", {
-//       stdio: "pipe", // Capture logs
-//       encoding: "utf-8", // Ensure readable output
-//     });
-//     console.log("Migration Output:\n", output);
-//   } catch (error: any) {
-//     console.error("Migration Error:\n", error.message);
-//   }
-// }
 
 function isoDate(date: string) {
   if (date.length === 16) {
     return new Date(date + ":00");
   }
   return new Date(date);
-}
-
-function capitalizeWords(str: string) {
-  return str
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
 }
 
 let mainWindow: BrowserWindow | null;
