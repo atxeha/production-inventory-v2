@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLog: () => ipcRenderer.invoke("get-log"),
   deleteAllLogs: () => ipcRenderer.invoke("delete-all-logs"),
   addNewPr: (data: any) => ipcRenderer.invoke("add-new-pr", data),
+  editPr: (data: any) => ipcRenderer.invoke("edit-pr", data),
+  addNewPull: (data: any) => ipcRenderer.invoke("add-new-pull", data),
   fetchPrDr: (args: any) => ipcRenderer.invoke("fetch-pr-dr", args),
   getUniqueField: (args: any) => ipcRenderer.invoke("get-unique-field", args),
   deleteSelectedItems: (tableName: string, selectedIds: (string | number)[]) =>
@@ -34,5 +36,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   deleteItemFromAnyTable: (id: string, table: string) =>
     ipcRenderer.invoke("delete-item-from-any-table", id, table),
+  exportItemsToExcel: (year: number) => ipcRenderer.invoke("export-items-to-excel", year),
 });
 

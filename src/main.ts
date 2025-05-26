@@ -15,7 +15,7 @@ import {
   prisma
 } from "./database";
 import { nativeTheme } from "electron";
-import { importItemsFromFile, importPulledItemsFromFile } from "./utils";
+import { importItemsFromFile, importPulledItemsFromFile, exportItemsToExcel } from "./utils";
 
 function isoDate(date: string) {
   if (date.length === 16) {
@@ -181,6 +181,38 @@ ipcMain.handle("get-pull-items", async () => {
   }
 });
 
+ipcMain.handle("add-new-pull", async (event, data) => {
+  try {
+    const id = await prisma.item.findUnique({
+      where: { itemCode: data.code },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!id) {
+      return { success: false, message: "Item not found." };
+    }
+
+    const newPull = await prisma.pulledItem.create({
+      data: {
+        itemId: Number(id.id),
+        releasedQuantity: data.quantity,
+        releasedBy: data.releasedBy,
+        receivedBy: data.receivedBy,
+        releasedDate: new Date(isoDate(data.date)),
+      },
+      include: {
+        item: true,
+      },
+    })
+
+    return { success: true, message: "Record added.", data: newPull }
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+});
+
 ipcMain.handle("add-log", async (event, logData) => {
     try {
         return await addLog(
@@ -233,6 +265,20 @@ ipcMain.handle("add-new-pr", async (event, data) => {
     return {success: true, message: "Purchase Request added.", data: newPr}
   } catch (err: any) {
     return {success: false, message: err.message};
+  }
+});
+
+ipcMain.handle("edit-pr", async (event, data) => {
+  try {
+    const pr = await prisma.purchaseRequest.update({
+      where: { id: data.id },
+      data: {
+        requestedQuantity: data.newQuantity,
+      },
+    })
+    return {success: true, message: "Purchase Request updated."}
+  } catch (err: any) {
+    return { success: false, message: err.message };
   }
 });
 
@@ -396,4 +442,17 @@ ipcMain.handle("import-pulled-items-from-file", async () => {
     return { success: false, message: "No file selected." };
   }
   return await importPulledItemsFromFile(filePaths[0]);
+});
+
+ipcMain.handle("export-items-to-excel", async (event, year) => {
+  // Show save dialog to pick output file
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: "Save Excel File",
+    defaultPath: `items-${year}.xlsx`,
+    filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+  });
+  if (canceled || !filePath) {
+    return { success: false, message: "Export canceled." };
+  }
+  return await exportItemsToExcel(year, filePath);
 });

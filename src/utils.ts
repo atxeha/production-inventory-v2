@@ -137,3 +137,64 @@ export async function importPulledItemsFromFile(filePath: string) {
       return { success: false, message: (error as Error).message };
     }
   }
+
+export async function exportItemsToExcel(year: number | undefined | null, outputPath: string) {
+  try {
+    // Get all items that are not deleted
+    const items = await prisma.item.findMany({
+      where: { isDeleted: false },
+      include: {
+        PurchaseRequest: true,
+        RequestDelivered: true,
+        PulledItem: true,
+      },
+      orderBy: { itemName: "asc" },
+    });
+
+    // Filter and map items for the given year, or all if year is not set
+    const filtered = items
+      .filter(item => {
+        if (!year) return true; // No year filter, include all
+        const itemYear = item.date.getFullYear();
+        return itemYear === year;
+      })
+      .map((item, idx) => {
+        // Sum PR, RD, PI for the given year or all if year is not set
+        const prTotal = item.PurchaseRequest
+          .filter(pr => !year || pr.requestedDate.getFullYear() === year)
+          .reduce((sum, pr) => sum + Number(pr.requestedQuantity), 0);
+
+        const rdTotal = item.RequestDelivered
+          .filter(rd => !year || rd.deliveredDate.getFullYear() === year)
+          .reduce((sum, rd) => sum + Number(rd.deliveredQuantity), 0);
+
+        const piTotal = item.PulledItem
+          .filter(pi => !year || pi.releasedDate.getFullYear() === year)
+          .reduce((sum, pi) => sum + Number(pi.releasedQuantity), 0);
+
+        return {
+          "No.": idx + 1,
+          "Code": item.itemCode,
+          "Item": item.itemName,
+          "Unit": item.unit,
+          "Stock": item.quantity,
+          "Requested": prTotal,
+          "Delivered": rdTotal,
+          "Withdrawn": piTotal,
+          "Date": item.date.toLocaleDateString("en-CA"),
+        };
+      });
+
+    // Create worksheet and workbook
+    const ws = XLSX.utils.json_to_sheet(filtered);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Items");
+
+    // Write to file
+    XLSX.writeFile(wb, outputPath);
+
+    return { success: true, message: `${filtered.length} items exported.` };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+  }

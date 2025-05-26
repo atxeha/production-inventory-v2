@@ -33,7 +33,6 @@ async function getYears(table, field) {
                 }
             });
         } else if (field) {
-            // For direct item fields (e.g., "date" on item)
             items.forEach(item => {
                 if (item[field]) {
                     const year = new Date(item[field]).getFullYear();
@@ -73,7 +72,7 @@ export function initAddItem() {
     const addItemForm = document.getElementById("addItemForm");
     const addItemModal = new bootstrap.Modal(document.getElementById("addItemModal"));
 
-    if (addItemForm && window.electronAPI) {
+    if (addItemForm && window.electronAPI && !addItemForm._listenerAdded) {
         addItemForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
@@ -101,7 +100,7 @@ export function initAddItem() {
                 releasedBy: releasedBy || "",
             };
 
-            if (!itemCode || !itemName || !quantity || !unit || !date) {
+            if (!itemCode || !itemName || quantity < 0 || !unit || !date) {
                 window.electronAPI.showToast("All fields required.", false); return;
             }
 
@@ -133,6 +132,7 @@ export function initAddItem() {
                 window.electronAPI.showToast(err.message, false);
             }
         });
+        addItemForm._listenerAdded = true;
     }
 }
 
@@ -513,10 +513,14 @@ export async function fetchItems(searchQuery = "", yearFilter = "") {
     `;
             tableBody.appendChild(row);
         });
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            const tooltipInstance = bootstrap.Tooltip.getInstance(el);
+            if (tooltipInstance) tooltipInstance.dispose();
+          });
+
         const tooltip = await import("../utils/tooltipUtil.js")
 
         tooltip.initializeTooltip();
-        tooltip.hideTooltips("prFilter", "drFilter");
 
     } catch (error) {
         return;
@@ -527,20 +531,23 @@ export async function deleteAllLogs() {
     const modal = new bootstrap.Modal(document.getElementById("deleteAllLogModal"));
     const form = document.getElementById("deleteAllLogForm")
 
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    if (form && !form._listenerAdded) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
 
-        const response = await window.electronAPI.deleteAllLogs();
+            const response = await window.electronAPI.deleteAllLogs();
 
-        if (response.success) {
-            window.electronAPI.showToast(response.message, true)
-            modal.hide();
+            if (response.success) {
+                window.electronAPI.showToast(response.message, true)
+                modal.hide();
 
-            displayLogs()
-        } else {
-            window.electronAPI.showToast(response.message, false)
-        }
-    })
+                displayLogs()
+            } else {
+                window.electronAPI.showToast(response.message, false)
+            }
+        });
+        form._listenerAdded = true;
+    }
 }
 
 export async function displayLogs() {
@@ -573,7 +580,7 @@ export async function displayLogs() {
         row.innerHTML = `
                 <td class="p-2">@${log.user}</td>
                 <td class="p-2">${log.log} <span class="log-item">(${log.item.itemCode} ${log.item.itemName})</span></td>
-                <td class="p-2" style="width: 10rem;">${formattedDate}</td>
+                <td class="p-2" style="width: 12.5rem;">${formattedDate}</td>
             `;
         tableBody.appendChild(row);
     });
@@ -603,3 +610,42 @@ export function initImportItem(search) {
   }
 }
 
+export function initExportItem(search) {
+    const exportBtn = document.getElementById("exportItem");
+    if (
+        exportBtn &&
+        window.electronAPI?.exportItemsToExcel &&
+        !exportBtn._exportListenerAdded
+    ) {
+        exportBtn.addEventListener("click", async () => {
+            // Get the selected year from your filter (if any)
+            const yearItem = document.getElementById("yearItem");
+            let year = yearItem && yearItem.value ? Number(yearItem.value) : undefined;
+
+            const result = await window.electronAPI.exportItemsToExcel(year);
+            if (result && result.success) {
+                window.electronAPI.showToast(result.message, true);
+                // Optionally refresh your items table here:
+                fetchItems(search, yearItem ? yearItem.value : "");
+            } else {
+                window.electronAPI.showToast(
+                    result?.message || "Export failed.",
+                    false
+                );
+            }
+        });
+        exportBtn._exportListenerAdded = true;
+    }
+  }
+
+export function clearPreferences() {
+    const clearBtn = document.getElementById("clearPreference");
+    if (clearBtn && !clearBtn._listenerAdded) {
+        clearBtn.addEventListener("click", () => {
+            localStorage.removeItem("dontShowDeleteModal");
+            localStorage.removeItem("dontShowDeleteAllLogModal");
+            window.electronAPI.showToast("Preferences cleared.", true);
+        });
+        clearBtn._listenerAdded = true;
+    }
+}

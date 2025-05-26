@@ -27,7 +27,7 @@ export function formatDate(dateString, timeZone = "Asia/Manila") {
     return new Date(dateString)
         .toLocaleString("en-US", {
             timeZone,
-            year: "2-digit",
+            year: "numeric",
             month: "numeric",
             day: "numeric",
             hour: "numeric",

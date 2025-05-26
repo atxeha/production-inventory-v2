@@ -13,14 +13,11 @@
                     id="importItem">arrow_downward</i>
             </div>
             <div>
-                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
-                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Export data"
-                    id="exportItem">arrow_upward</i>
-            </div>
-            <div>
-                <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
-                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Add pulled item"
-                    id="addPulledItem">add</i>
+                <span data-bs-toggle="modal" data-bs-target="#addPulledModal">
+                    <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
+                        data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Add pulled item"
+                        id="addPulledItem">add</i>
+                </span>
             </div>
             <div>
                 <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
@@ -33,12 +30,10 @@
                     id="selectAllItem">done_all</i>
             </div>
             <div>
-                <span data-bs-toggle="modal" data-bs-target="#deleteItemModal">
                     <i class="mt-1 material-icons icon icon-btn" style="cursor: pointer;" data-bs-placement="bottom"
                     data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" title="Delete selected"
                     id="deleteSelected">delete</i>
-                </span>
-                
+        
             </div>
         </div>
 
@@ -91,6 +86,65 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="addPulledModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="1"
+    aria-labelledby="addPulledModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="addPulledModalLabel">Add Pulled Item <span class="text-muted text-small">(for pulled item that's not recorded yet)</span></h6>
+            </div>
+            <form method="post" id="pullForm">
+                <div class="modal-body font p-4 pb-2">
+                    <div class="row font mb-4">
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="pullItem">Item</label>
+                            <div class="custom-datalist w-100">
+                                <input type="text" id="pullItem" placeholder="Select item..." autocomplete="off"
+                                    class="search-box form-control rounded-5 font" />
+                                <ul id="pullItems" class="options-list rounded-3"></ul>
+                            </div>
+
+                        </div>
+                        <div class="input-field col-3">
+                            <label class="mb-2 ms-2" for="pullQuantity">Quantity</label>
+                            <input type="number" id="pullQuantity" class="search-box form-control rounded-5 font"
+                                min="1">
+                        </div>
+                        <div class="input-field col-4">
+                            <label class="mb-2 ms-2" for="pullDate">Date</label>
+                            <input type="datetime-local" id="pullDate" class="search-box form-control rounded-5 font">
+                        </div>
+                    </div>
+
+                    <div class="row font mb-4">
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="releasedBy">Released By</label>
+                            <input type="text" id="releasedBy" class="search-box form-control rounded-5 font"
+                                value="Vios, R.">
+                        </div>
+                        <div class="input-field col-6">
+                            <label class="mb-2 ms-2" for="receivedBy">Received By</label>
+                            <!-- <input type="text" id="receivedBy" class="search-box form-control rounded-5 font"> -->
+
+                            <div class="custom-datalist w-100">
+                                <input type="text" id="receivedBy" autocomplete="off"
+                                    class="search-box form-control rounded-5 font" />
+                                <ul id="receivedBys" class="options-list rounded-3"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3"
+                            data-bs-dismiss="modal">Discard</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

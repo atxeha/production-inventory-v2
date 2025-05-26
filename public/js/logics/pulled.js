@@ -1,4 +1,51 @@
-import { formatDate } from "../utils/utils.js";
+import { formatDate, capitalizeWords } from "../utils/utils.js";
+
+export function initPullItem() {
+    const form = document.getElementById("pullForm");
+    const modal = new bootstrap.Modal(document.getElementById("addPulledModal"));
+
+    if (form && window.electronAPI && !form._listenerAdded) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const rawCode = document.getElementById("pullItem").value.trim().toUpperCase();
+            const quantity = parseInt(document.getElementById("pullQuantity").value.trim());
+            const date = document.getElementById("pullDate").value.trim();
+            const releasedBy = capitalizeWords(document.getElementById("releasedBy").value.trim());
+            const receivedBy = capitalizeWords(document.getElementById("receivedBy").value.trim());
+
+            const code = rawCode.split(" ")[0];
+
+            const data = {
+                code: code,
+                quantity: quantity,
+                releasedBy: releasedBy,
+                receivedBy: receivedBy,
+                date: date,
+            };
+
+            if (!code || !quantity || !date || !releasedBy || !receivedBy) {
+                window.electronAPI.showToast("All fields required.", false); return;
+            }
+
+            try {
+                const response = await window.electronAPI.addNewPull(data);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, response.success);
+                    modal.hide();
+                    fetchPulledItems()
+
+                } else {
+                    window.electronAPI.showToast(response.message, response.success);
+                }
+            } catch (err) {
+                window.electronAPI.showToast(err.message, false);
+            }
+        });
+        form._listenerAdded = true;
+    }
+}
 
 export async function fetchPulledItems(searchQuery = "") {
     try {
@@ -56,6 +103,10 @@ export async function fetchPulledItems(searchQuery = "") {
             `;
             tableBody.appendChild(row);
         });
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        const tooltipInstance = bootstrap.Tooltip.getInstance(el);
+        if (tooltipInstance) tooltipInstance.dispose();
+      });
         
         const tooltip = await import("../utils/tooltipUtil.js")
         tooltip.initializeTooltip();

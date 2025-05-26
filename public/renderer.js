@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             table: "item",
             field: "addedBy",
           });
+
           const deliveredByOptions = await window.electronAPI.getUniqueField({
             table: "requestDelivered",
             field: "deliveredBy",
@@ -164,11 +165,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           if (yearItem) {
             const savedYearFilter = localStorage.getItem("yearItem");
-            console.log("Saved filter:", savedYearFilter);
             if (savedYearFilter) {
               yearFilter = savedYearFilter;
             }
           }
+
           if (yearItem) {
             yearItem.addEventListener("change", () => {
               const tooltipInstance = bootstrap.Tooltip.getInstance(yearItem);
@@ -242,112 +243,141 @@ document.addEventListener("DOMContentLoaded", async () => {
           homeModule.initEditItem();
           homeModule.deleteAllLogs();
           homeModule.initImportItem(searchFilter);
+            homeModule.initExportItem(searchFilter);
 
           selectionHandlers.handleSelection("itemsTableBody");
-          selectionHandlers.deleteSelected(
+          const triggerDelete = selectionHandlers.deleteSelected(
             "item",
             "../logics/home.js",
             "fetchItems"
           );
 
-          utilsModule.initDate("addDate", "pullDate", "newQuantityDate");
+        document.getElementById("deleteSelected").addEventListener("click", triggerDelete);
 
+        utilsModule.initDate("addDate", "pullDate", "newQuantityDate");
+        homeModule.clearPreferences();
 
         }
 
         if (page === "pulled.html") {
-          const pulledModule = await import("./js/logics/pulled.js");
+            const fetchItemModule = await import("./js/utils/utils.js");
+            const pulledModule = await import("./js/logics/pulled.js");
+            const utilsModule = await import("./js/utils/deleteItem.js");
+            const dateUtilsModule = await import("./js/utils/defaultDate.js");
 
-          const utilsModule = await import("./js/utils/deleteItem.js");
+            const selectionHandler = await import(
+                "./js/utils/itemSelectionHandler.js"
+            );
 
-          const searchItem = document.getElementById("searchPulledItem");
-          let searchFilter = "";
-          if (searchItem) {
-            const savedFilter = localStorage.getItem("searchPulledItem");
-            if (savedFilter) {
-              searchFilter = savedFilter;
-              searchItem.value = savedFilter;
-            } else {
-              searchItem.value = searchFilter;
+            selectionHandler.handleSelection("pulledTableBody");
+
+            const searchItem = document.getElementById("searchPulledItem");
+
+            let searchFilter = "";
+            if (searchItem) {
+                const savedFilter = localStorage.getItem("searchPulledItem");
+                if (savedFilter) {
+                searchFilter = savedFilter;
+                searchItem.value = savedFilter;
+                } else {
+                searchItem.value = searchFilter;
+                }
             }
-          }
 
-          if (searchItem) {
-            searchItem.addEventListener("input", () => {
-              localStorage.setItem("searchPulledItem", searchItem.value);
-              pulledModule.fetchPulledItems(searchItem.value);
+            if (searchItem) {
+                searchItem.addEventListener("input", () => {
+                localStorage.setItem("searchPulledItem", searchItem.value);
+                pulledModule.fetchPulledItems(searchItem.value);
+                });
+            }
+
+            pulledModule.initPullItem();
+            pulledModule.fetchPulledItems(searchFilter);
+            utilsModule.setupDeleteHandler(
+                "pulledTableBody",
+                "PulledItem",
+                pulledModule.fetchPulledItems,
+                searchFilter
+            );
+            pulledModule.initImportItem(searchFilter);
+
+                const triggerDelete = selectionHandler.deleteSelected(
+                "pulledItem",
+                "../logics/pulled.js",
+                "fetchPulledItems"
+            );
+            document.getElementById("deleteSelected").addEventListener("click", triggerDelete);
+            const options = await fetchItemModule.fetchItems();
+            datalistModule.initCustomDatalist(options, "pullItem", "pullItems");
+
+            const staffOptions = await window.electronAPI.getUniqueField({
+                table: "item",
+                field: "addedBy",
             });
-          }
 
-          pulledModule.fetchPulledItems(searchFilter);
-          utilsModule.setupDeleteHandler(
-            "pulledTableBody",
-            "PulledItem",
-            pulledModule.fetchPulledItems,
-            searchFilter
-          );
-          pulledModule.initImportItem(searchFilter);
+            datalistModule.initCustomDatalist(
+                staffOptions,
+                "receivedBy",
+                "receivedBys"
+              );
 
-          const selectionHandler = await import(
-            "./js/utils/itemSelectionHandler.js"
-          );
-          selectionHandler.handleSelection("pulledTableBody");
-          selectionHandler.deleteSelected(
-            "pulledItem",
-            "../logics/pulled.js",
-            "fetchPulledItems"
-          );
+            dateUtilsModule.initDate("pullDate");
         }
         if (page === "pr.html") {
-          const fetchItemModule = await import("./js/utils/utils.js");
-          const prModule = await import("./js/logics/pr.js");
-          const utilsModule = await import("./js/utils/deleteItem.js");
-          const utilsDateModule = await import("./js/utils/defaultDate.js");
+            const fetchItemModule = await import("./js/utils/utils.js");
+            const prModule = await import("./js/logics/pr.js");
+            const utilsModule = await import("./js/utils/deleteItem.js");
+            const utilsDateModule = await import("./js/utils/defaultDate.js");
 
-          const searchItem = document.getElementById("searchPrItem");
-          let searchFilter = "";
-          if (searchItem) {
-            const savedFilter = localStorage.getItem("searchPrItem");
-            if (savedFilter) {
-              searchFilter = savedFilter;
-              searchItem.value = savedFilter;
-            } else {
-              searchItem.value = searchFilter;
+            const selectionHandler = await import(
+                "./js/utils/itemSelectionHandler.js"
+            );
+            selectionHandler.handleSelection("prTableBody");
+
+            const searchItem = document.getElementById("searchPrItem");
+            let searchFilter = "";
+            if (searchItem) {
+                const savedFilter = localStorage.getItem("searchPrItem");
+                if (savedFilter) {
+                searchFilter = savedFilter;
+                searchItem.value = savedFilter;
+                } else {
+                searchItem.value = searchFilter;
+                }
             }
-          }
 
-          if (searchItem) {
-            searchItem.addEventListener("input", () => {
-              localStorage.setItem("searchPrItem", searchItem.value);
-              prModule.fetchPr(searchItem.value);
-            });
-          }
+            if (searchItem) {
+                searchItem.addEventListener("input", () => {
+                localStorage.setItem("searchPrItem", searchItem.value);
+                prModule.fetchPr(searchItem.value);
+                });
+            }
 
-          const options = await fetchItemModule.fetchItems();
+            const options = await fetchItemModule.fetchItems();
 
-          datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
-          utilsDateModule.initDate("addPrDate");
+            datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
+            utilsDateModule.initDate("addPrDate");
 
-          prModule.initAddNewPr();
-          prModule.fetchPr(searchFilter);
+            prModule.initAddNewPr();
+            prModule.fetchPr(searchFilter);
 
-          utilsModule.setupDeleteHandler(
-            "prTableBody",
-            "PurchaseRequest",
-            prModule.fetchPr,
-            searchFilter
-          );
+            utilsModule.setupDeleteHandler(
+                "prTableBody",
+                "PurchaseRequest",
+                prModule.fetchPr,
+                searchFilter
+            );
 
-          const selectionHandler = await import(
-            "./js/utils/itemSelectionHandler.js"
-          );
-          selectionHandler.handleSelection("prTableBody");
-          selectionHandler.deleteSelected(
-            "purchaseRequest",
-            "../logics/pr.js",
-            "fetchPr"
-          );
+            const triggerDelete = selectionHandler.deleteSelected(
+                "purchaseRequest",
+                "../logics/pr.js",
+                "fetchPr"
+            );
+
+            document.getElementById("deleteSelected").addEventListener("click", triggerDelete);
+
         }
+
         if (page === "dr.html") {
           const fetchItemModule = await import("./js/utils/utils.js");
           const drModule = await import("./js/logics/dr.js");
@@ -355,6 +385,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const utilsDateModule = await import("./js/utils/defaultDate.js");
 
           const searchItem = document.getElementById("searchDrItem");
+
           let searchFilter = "";
           if (searchItem) {
             const savedFilter = localStorage.getItem("searchDrItem");
@@ -409,11 +440,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           selectionHandler.handleSelection("drTableBody");
-          selectionHandler.deleteSelected(
+
+          const triggerDelete = selectionHandler.deleteSelected(
             "requestDelivered",
             "../logics/dr.js",
             "fetchDr"
           );
+
+            document.getElementById("deleteSelected").addEventListener("click", triggerDelete);
+
         }
       })
       .catch((error) => console.error("Error loading page:", error));

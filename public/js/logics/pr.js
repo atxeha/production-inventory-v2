@@ -117,8 +117,10 @@ export async function fetchPr(searchQuery = "") {
                 <td class=actions">
                     <i data-delete-id="${item.id}" class="dlt-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Delete">delete</i>
-                    <i data-edit-id="${item.id}" class="edit-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
+                    <span data-bs-toggle="modal" data-bs-target="#editPrModal">
+                      <i data-edit-id="${item.id}" class="edit-item edit-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Edit">edit</i>
+                    </span>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -134,3 +136,70 @@ export async function fetchPr(searchQuery = "") {
       return;
     }
 };
+
+// undone
+export async function initEditPr() {
+    const form = document.getElementById("editPrForm");
+    const modal = new bootstrap.Modal(document.getElementById("editPrModal"));
+    const tableBody = document.getElementById("prTableBody");
+
+    const quantity = document.getElementById("editPrQuantity");
+    const requestedBy = document.getElementById("editPrRequestedBy");
+
+    let currentEditId = null;
+
+    if (tableBody) {
+        tableBody.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (target.classList.contains("edit-item")) {
+                event.preventDefault();
+                const id = target.dataset.editId;
+                currentEditId = id;
+
+                const item = items.find((item) => item.id == id);
+
+                itemCode.value = item.itemCode;
+                itemName.value = item.itemName;
+                itemUnit.value = item.unit;
+
+                modal.show();
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const code = itemCode.value.trim().toUpperCase();
+            const name = capitalizeWords(itemName.value.trim());
+            const unit = capitalizeWords(itemUnit.value.trim());
+
+            if (!currentEditId || !unit || !code || !name) {
+                window.electronAPI.showToast("All fields are required.", false);
+                return;
+            }
+
+            const data = {
+                itemId: Number(currentEditId),
+                itemCode: code,
+                itemName: name,
+                itemUnit: unit,
+            };
+
+            try {
+                const response = await window.electronAPI.editItem(data);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+                    modal.hide();
+                    fetchItems();
+                } else {
+                    window.electronAPI.showToast(response.message, false);
+                }
+            } catch (error) {
+                window.electronAPI.showToast(error.message, false);
+            }
+        });
+    }
+}

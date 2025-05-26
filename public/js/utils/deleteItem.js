@@ -12,7 +12,7 @@ export function setupDeleteHandler(
   search = ""
 ) {
   const tableBody = document.getElementById(tableBodyId);
-  if (tableBody) {
+  if (tableBody && !tableBody._deleteListenerAdded) {
     tableBody.addEventListener("click", async (event) => {
       const target = event.target;
       if (target.classList.contains("dlt-icon")) {
@@ -34,5 +34,6 @@ export function setupDeleteHandler(
         }
       }
     });
+    tableBody._deleteListenerAdded = true;
   }
 }
