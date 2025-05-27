@@ -1,19 +1,20 @@
 import { capitalizeWords, formatDate } from "../utils/utils.js";
 
 function setupWithdrawnReleasedByToggle() {
-  const withdrawnInput = document.getElementById("addWithdrawn");
-  const releasedByDiv = document.querySelector(".input-field.col-4.d-none");
+    const withdrawnInput = document.getElementById("addWithdrawn");
+    const releasedByDiv = document.querySelector(".input-field.col-4.d-none");
 
-  if (withdrawnInput && releasedByDiv) {
-    withdrawnInput.addEventListener("input", () => {
-      const value = parseInt(withdrawnInput.value, 10);
-      if (value >= 1) {
-        releasedByDiv.classList.remove("d-none");
-      } else {
-        releasedByDiv.classList.add("d-none");
-      }
-    });
-  }
+    if (withdrawnInput && releasedByDiv && !withdrawnInput._toggleListenerAdded) {
+        withdrawnInput.addEventListener("input", () => {
+            const value = parseInt(withdrawnInput.value, 10);
+            if (value >= 1) {
+                releasedByDiv.classList.remove("d-none");
+            } else {
+                releasedByDiv.classList.add("d-none");
+            }
+        });
+        withdrawnInput._toggleListenerAdded = true;
+    }
 }
 
 async function getYears(table, field) {
@@ -44,7 +45,6 @@ async function getYears(table, field) {
         const uniqueYears = Array.from(yearsSet).sort((a, b) => a - b);
         return uniqueYears;
     } catch (error) {
-        console.error("Error fetching unique years:", error);
         return [];
     }
 }
@@ -147,7 +147,7 @@ export async function initEditItem() {
 
     let currentEditId = null;
 
-    if (tableBody) {
+    if (tableBody && !tableBody._editListenerAdded) {
         tableBody.addEventListener("click", async (event) => {
             const target = event.target;
             if (target.classList.contains("edit-item")) {
@@ -160,13 +160,12 @@ export async function initEditItem() {
                 itemCode.value = item.itemCode;
                 itemName.value = item.itemName;
                 itemUnit.value = item.unit;
-
-                modal.show();
             }
         });
+        tableBody._editListenerAdded = true;
     }
 
-    if (form) {
+    if (form && !form._editListenerAdded) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
@@ -200,6 +199,7 @@ export async function initEditItem() {
                 window.electronAPI.showToast(error.message, false);
             }
         });
+        form._editListenerAdded = true;
     }
 }
 
@@ -214,7 +214,7 @@ export async function initPullItem() {
 
     let currentPullId = null;
 
-    if (tableBody) {
+    if (tableBody && !tableBody._pullListenerAdded) {
         tableBody.addEventListener("click", async (event) => {
             const target = event.target;
             if (target.classList.contains("pullItem")) {
@@ -231,9 +231,10 @@ export async function initPullItem() {
                 pullItemModal.show();
             }
         });
+        tableBody._pullListenerAdded = true;
     }
 
-    if (pullItemForm) {
+    if (pullItemForm && !pullItemForm._listenerAdded) {
         pullItemForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
@@ -282,6 +283,7 @@ export async function initPullItem() {
                 window.electronAPI.showToast(error.message, false);
             }
         });
+        pullItemForm._listenerAdded = true;
     }
 }
 
@@ -296,7 +298,7 @@ export async function initUpdateItemQuantity() {
 
     let currentId = null;
 
-    if (form) {
+    if (form && !form._listenerAdded) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
@@ -345,9 +347,10 @@ export async function initUpdateItemQuantity() {
                 window.electronAPI.showToast(error.message, false);
             }
         });
+        form._listenerAdded = true;
     }
 
-    if (tableBody) {
+    if (tableBody && !tableBody._quantityListenerAdded) {
         tableBody.addEventListener("click", async (event) => {
             const target = event.target;
             if (target.classList.contains("new-quantity")) {
@@ -361,6 +364,7 @@ export async function initUpdateItemQuantity() {
                 itemStockLabel.textContent = item.quantity
             }
         });
+        tableBody._quantityListenerAdded = true;
     }
 }
 
@@ -399,6 +403,7 @@ export async function initModalListeners() {
             checkbox.addEventListener('change', checkbox._listener);
         }
     });
+    modal._shownListenerAdded = true;
 }
 
 export async function fetchItems(searchQuery = "", yearFilter = "") {

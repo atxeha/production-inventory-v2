@@ -359,7 +359,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             utilsDateModule.initDate("addPrDate");
 
             prModule.initAddNewPr();
+            prModule.initEditPr();
             prModule.fetchPr(searchFilter);
+            prModule.initImportItem(searchFilter);
 
             utilsModule.setupDeleteHandler(
                 "prTableBody",

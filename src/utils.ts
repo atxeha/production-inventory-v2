@@ -198,3 +198,41 @@ export async function exportItemsToExcel(year: number | undefined | null, output
     return { success: false, message: (error as Error).message };
   }
   }
+
+export async function importPurchaseRequestsFromFile(filePath: string) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+    let imported = 0, skipped = 0;
+    for (const row of rows) {
+      const itemCode = String(row.code || row.Code || row["Item Code"]);
+      const item = await prisma.item.findUnique({ where: { itemCode } });
+      if (!item) {
+        skipped++;
+        continue;
+      }
+
+      const prData = {
+        itemId: item.id,
+        requestedQuantity: Number(row.quantity || row.Quantity || row.QTY || 0),
+        requestedBy: String(row.requestedBy || row["Requested by"] || row["Requested By"] || ""),
+        requestedDate: parseDate(row.date || row.Date) || new Date(),
+        isDeleted: false,
+      };
+
+      await prisma.purchaseRequest.create({ data: prData });
+      imported++;
+    }
+
+    return {
+      success: true,
+      message: `${imported} rows imported, ${skipped} skipped.`,
+    };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+  }

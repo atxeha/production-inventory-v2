@@ -15,7 +15,7 @@ import {
   prisma
 } from "./database";
 import { nativeTheme } from "electron";
-import { importItemsFromFile, importPulledItemsFromFile, exportItemsToExcel } from "./utils";
+import { importItemsFromFile, importPulledItemsFromFile, exportItemsToExcel, importPurchaseRequestsFromFile } from "./utils";
 
 function isoDate(date: string) {
   if (date.length === 16) {
@@ -270,9 +270,22 @@ ipcMain.handle("add-new-pr", async (event, data) => {
 
 ipcMain.handle("edit-pr", async (event, data) => {
   try {
-    const pr = await prisma.purchaseRequest.update({
+    const item = await prisma.purchaseRequest.findUnique({
+      where: { id: data.id },
+    });
+
+    if (!item) {
+      return { success: false, message: "Item not found." };
+    }
+
+    if (item.requestedQuantity === data.newQuantity && item.requestedBy === data.newRequestedBy) {
+      return { success: false, message: "No changes detected." }
+    }
+
+    await prisma.purchaseRequest.update({
       where: { id: data.id },
       data: {
+        requestedBy: data.newRequestedBy,
         requestedQuantity: data.newQuantity,
       },
     })
@@ -455,4 +468,16 @@ ipcMain.handle("export-items-to-excel", async (event, year) => {
     return { success: false, message: "Export canceled." };
   }
   return await exportItemsToExcel(year, filePath);
+});
+
+ipcMain.handle("import-purchase-requests-from-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: "Select Excel File",
+    filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
+    properties: ["openFile"]
+  });
+  if (canceled || !filePaths[0]) {
+    return { success: false, message: "Import canceled." };
+  }
+  return await importPurchaseRequestsFromFile(filePaths[0]);
 });

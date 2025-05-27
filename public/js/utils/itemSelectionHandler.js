@@ -6,7 +6,7 @@ export function handleSelection(tableBodyId) {
     const selectItemIcon = document.getElementById("selectItem");
     const tableBody = document.getElementById(tableBodyId);
 
-    if (tableBody) {
+    if (tableBody && !tableBody._selectionListenerAdded) {
         tableBody.addEventListener("click", function (event) {
             // Only proceed if checkboxes are visible
             if (checkboxColumn && checkboxColumn.style.display !== "none") {
@@ -29,6 +29,7 @@ export function handleSelection(tableBodyId) {
                 }
             }
         });
+        tableBody._selectionListenerAdded = true;
     }
 
     // Function to add or remove row highlight based on checkbox change
@@ -48,7 +49,7 @@ export function handleSelection(tableBodyId) {
     }
 
     // Event listener for select all icon click
-    if (selectAllIcon) {
+    if (selectAllIcon && !selectAllIcon._selectAllListenerAdded) {
         selectAllIcon.addEventListener("click", () => {
             const checkboxCells = document.querySelectorAll(".checkboxCell input");
             const rows = document.querySelectorAll(`#${tableBodyId} tr`);
@@ -75,10 +76,11 @@ export function handleSelection(tableBodyId) {
                 });
             }
         });
+        selectAllIcon._selectAllListenerAdded = true;
     }
 
     // Event listener for select item icon click
-    if (selectItemIcon) {
+    if (selectItemIcon && !selectItemIcon._selectItemListenerAdded) {
         selectItemIcon.addEventListener("click", () => {
             if (!ifSelected) {
                 const checkboxCells = document.querySelectorAll(".checkboxCell input");
@@ -93,6 +95,7 @@ export function handleSelection(tableBodyId) {
                 });
             }
         });
+        selectItemIcon._selectItemListenerAdded = true;
     }
 
     // Unselect items and hide checkboxes when clicking outside the table/cells

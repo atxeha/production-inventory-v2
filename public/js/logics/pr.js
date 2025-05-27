@@ -1,5 +1,7 @@
 import { capitalizeWords, formatDate } from "../utils/utils.js";
 
+let items = []
+
 export function initAddNewPr() {
     const form = document.getElementById("addPrForm");
     const modal = new bootstrap.Modal(document.getElementById("addPrModal"));
@@ -66,9 +68,7 @@ export function initAddNewPr() {
 
 export async function fetchPr(searchQuery = "") {
     try {
-        // const items = await window.electronAPI.fetchPr();
-
-        const items = await window.electronAPI.fetchPrDr({ tableName: "purchaseRequest", orderBy: "requestedDate", order: "desc" });
+        items = await window.electronAPI.fetchPrDr({ tableName: "purchaseRequest", orderBy: "requestedDate", order: "desc" });
 
         const table = document.getElementById("prTable");
         const tableHead = document.getElementById("prTableHead");
@@ -138,6 +138,7 @@ export async function fetchPr(searchQuery = "") {
 };
 
 // undone
+
 export async function initEditPr() {
     const form = document.getElementById("editPrForm");
     const modal = new bootstrap.Modal(document.getElementById("editPrModal"));
@@ -148,7 +149,7 @@ export async function initEditPr() {
 
     let currentEditId = null;
 
-    if (tableBody) {
+  if (tableBody && !tableBody._editListenerAdded) {
         tableBody.addEventListener("click", async (event) => {
             const target = event.target;
             if (target.classList.contains("edit-item")) {
@@ -158,42 +159,38 @@ export async function initEditPr() {
 
                 const item = items.find((item) => item.id == id);
 
-                itemCode.value = item.itemCode;
-                itemName.value = item.itemName;
-                itemUnit.value = item.unit;
-
-                modal.show();
+                quantity.value = item.requestedQuantity;
+                requestedBy.value = item.requestedBy;
             }
         });
+        tableBody._editListenerAdded = true;
     }
 
-    if (form) {
+    if (form && !form._editListenerAdded) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const code = itemCode.value.trim().toUpperCase();
-            const name = capitalizeWords(itemName.value.trim());
-            const unit = capitalizeWords(itemUnit.value.trim());
+            const newQuantity = quantity.value.trim();
+            const newRequestedBy = capitalizeWords(requestedBy.value.trim());
 
-            if (!currentEditId || !unit || !code || !name) {
+          if (!newQuantity || !newRequestedBy) {
                 window.electronAPI.showToast("All fields are required.", false);
                 return;
             }
 
             const data = {
-                itemId: Number(currentEditId),
-                itemCode: code,
-                itemName: name,
-                itemUnit: unit,
+                id: currentEditId,
+                newQuantity: Number(newQuantity),
+                newRequestedBy: newRequestedBy,
             };
 
             try {
-                const response = await window.electronAPI.editItem(data);
+                const response = await window.electronAPI.editPr(data);
 
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
                     modal.hide();
-                    fetchItems();
+                    fetchPr();
                 } else {
                     window.electronAPI.showToast(response.message, false);
                 }
@@ -201,5 +198,30 @@ export async function initEditPr() {
                 window.electronAPI.showToast(error.message, false);
             }
         });
+        form._editListenerAdded = true;
+    }
+}
+
+export function initImportItem(search) {
+    const importBtn = document.getElementById("importItem");
+    if (
+        importBtn &&
+        window.electronAPI?.importPulledItemsFromFile &&
+        !importBtn._importListenerAdded
+    ) {
+        importBtn.addEventListener("click", async () => {
+            const result = await window.electronAPI.importPurchaseRequestsFromFile();
+            if (result && result.success) {
+                window.electronAPI.showToast(result.message, true);
+                // Optionally refresh your items table here:
+                fetchPr(search);
+            } else {
+                window.electronAPI.showToast(
+                    result?.message || "Import failed.",
+                    false
+                );
+            }
+        });
+        importBtn._importListenerAdded = true;
     }
 }

@@ -32,8 +32,8 @@ export function initPullItem() {
                 const response = await window.electronAPI.addNewPull(data);
 
                 if (response.success) {
-                    window.electronAPI.showToast(response.message, response.success);
                     modal.hide();
+                    window.electronAPI.showToast(response.message, response.success);
                     fetchPulledItems()
 
                 } else {
@@ -114,7 +114,6 @@ export async function fetchPulledItems(searchQuery = "") {
         return;
     }
 };
-
 
 export function initImportItem(search) {
   const importBtn = document.getElementById("importItem");

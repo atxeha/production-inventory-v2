@@ -37,5 +37,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteItemFromAnyTable: (id: string, table: string) =>
     ipcRenderer.invoke("delete-item-from-any-table", id, table),
   exportItemsToExcel: (year: number) => ipcRenderer.invoke("export-items-to-excel", year),
+  importPurchaseRequestsFromFile: () => ipcRenderer.invoke("import-purchase-requests-from-file"),
 });
 
