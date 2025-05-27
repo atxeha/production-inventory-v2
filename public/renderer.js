@@ -171,19 +171,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
 
           if (yearItem) {
-            yearItem.addEventListener("change", () => {
+            yearItem.addEventListener("change", (el) => {
               const tooltipInstance = bootstrap.Tooltip.getInstance(yearItem);
               if (tooltipInstance) {
-                tooltipInstance.hide();
+                tooltipInstance.dispose();
               }
 
               localStorage.setItem("yearItem", yearItem.value);
-              console.log(
-                "Year filter changed:",
-                yearItem.value,
-                "and search filter:",
-                searchItem.value
-              );
               homeModule.fetchItems(searchItem.value, yearItem.value);
             });
           }
@@ -233,15 +227,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             "addDeliveredBys"
           );
 
-          homeModule.initAddItem();
+          homeModule.initAddItem(searchFilter, yearFilter);
           homeModule.initModalListeners();
           homeModule.fetchItems(searchFilter);
           homeModule.displayLogs();
 
-          homeModule.initPullItem();
-          homeModule.initUpdateItemQuantity();
-          homeModule.initEditItem();
-          homeModule.deleteAllLogs();
+          homeModule.initPullItem(searchFilter);
+          homeModule.initUpdateItemQuantity(searchFilter);
+          homeModule.initEditItem(searchFilter);
           homeModule.initImportItem(searchFilter);
             homeModule.initExportItem(searchFilter);
 
@@ -254,55 +247,60 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.getElementById("deleteSelected").addEventListener("click", triggerDelete);
 
+        homeModule.deleteAllLogs();
+
         utilsModule.initDate("addDate", "pullDate", "newQuantityDate");
-        homeModule.clearPreferences();
+              homeModule.clearPreferences();
+              homeModule.initDeleteAllLogs();
 
-        }
+              }
 
-        if (page === "pulled.html") {
-            const fetchItemModule = await import("./js/utils/utils.js");
-            const pulledModule = await import("./js/logics/pulled.js");
-            const utilsModule = await import("./js/utils/deleteItem.js");
-            const dateUtilsModule = await import("./js/utils/defaultDate.js");
+              if (page === "pulled.html") {
+                  const fetchItemModule = await import("./js/utils/utils.js");
+                  const pulledModule = await import("./js/logics/pulled.js");
+                  const utilsModule = await import("./js/utils/deleteItem.js");
+                  const dateUtilsModule = await import("./js/utils/defaultDate.js");
 
-            const selectionHandler = await import(
-                "./js/utils/itemSelectionHandler.js"
-            );
+                  const selectionHandler = await import(
+                      "./js/utils/itemSelectionHandler.js"
+                  );
 
-            selectionHandler.handleSelection("pulledTableBody");
+                  selectionHandler.handleSelection("pulledTableBody");
 
-            const searchItem = document.getElementById("searchPulledItem");
+                  const searchItem = document.getElementById("searchPulledItem");
 
-            let searchFilter = "";
-            if (searchItem) {
-                const savedFilter = localStorage.getItem("searchPulledItem");
-                if (savedFilter) {
-                searchFilter = savedFilter;
-                searchItem.value = savedFilter;
-                } else {
-                searchItem.value = searchFilter;
-                }
-            }
+                  let searchFilter = "";
+                  if (searchItem) {
+                      const savedFilter = localStorage.getItem("searchPulledItem");
+                      if (savedFilter) {
+                      searchFilter = savedFilter;
+                      searchItem.value = savedFilter;
+                      } else {
+                      searchItem.value = searchFilter;
+                      }
+                  }
 
-            if (searchItem) {
-                searchItem.addEventListener("input", () => {
-                localStorage.setItem("searchPulledItem", searchItem.value);
-                pulledModule.fetchPulledItems(searchItem.value);
-                });
-            }
+                  if (searchItem) {
+                      searchItem.addEventListener("input", () => {
+                      localStorage.setItem("searchPulledItem", searchItem.value);
+                      pulledModule.fetchPulledItems(searchItem.value);
+                      });
+                  }
 
-            pulledModule.initPullItem();
-            pulledModule.fetchPulledItems(searchFilter);
-            utilsModule.setupDeleteHandler(
-                "pulledTableBody",
-                "PulledItem",
-                pulledModule.fetchPulledItems,
-                searchFilter
-            );
-            pulledModule.initImportItem(searchFilter);
+                  pulledModule.initPullItem(searchFilter);
+                  pulledModule.fetchPulledItems(searchFilter);
+                  utilsModule.setupDeleteHandler(
+                      "pulledTableBody",
+                      "PulledItem",
+                      pulledModule.fetchPulledItems,
+                      searchFilter
+                  );
+                  pulledModule.initImportItem(searchFilter);
 
-                const triggerDelete = selectionHandler.deleteSelected(
-                "pulledItem",
+                      const triggerDelete = selectionHandler.deleteSelected(
+                      "pulledItem",
+                     
+
                 "../logics/pulled.js",
                 "fetchPulledItems"
             );
@@ -358,8 +356,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             datalistModule.initCustomDatalist(options, "addPrItem", "addPrItems");
             utilsDateModule.initDate("addPrDate");
 
-            prModule.initAddNewPr();
-            prModule.initEditPr();
+          prModule.initAddNewPr(searchFilter);
+          prModule.initEditPr(searchFilter);
             prModule.fetchPr(searchFilter);
             prModule.initImportItem(searchFilter);
 
@@ -429,6 +427,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
           utilsDateModule.initDate("drDate");
 
+          drModule.initAddNewDr(searchFilter);
           drModule.fetchDr(searchFilter);
           const selectionHandler = await import(
             "./js/utils/itemSelectionHandler.js"

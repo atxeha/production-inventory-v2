@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLog: () => ipcRenderer.invoke("get-log"),
   deleteAllLogs: () => ipcRenderer.invoke("delete-all-logs"),
   addNewPr: (data: any) => ipcRenderer.invoke("add-new-pr", data),
+  addNewDr: (data: any) => ipcRenderer.invoke("add-new-dr", data),
   editPr: (data: any) => ipcRenderer.invoke("edit-pr", data),
   addNewPull: (data: any) => ipcRenderer.invoke("add-new-pull", data),
   fetchPrDr: (args: any) => ipcRenderer.invoke("fetch-pr-dr", args),

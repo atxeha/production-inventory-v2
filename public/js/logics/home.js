@@ -68,7 +68,7 @@ async function populatePrYearFilter() {
 
 let items = []
 
-export function initAddItem() {
+export function initAddItem(search) {
     const addItemForm = document.getElementById("addItemForm");
     const addItemModal = new bootstrap.Modal(document.getElementById("addItemModal"));
 
@@ -110,7 +110,7 @@ export function initAddItem() {
                 if (response.success) {
                     window.electronAPI.showToast(response.message, response.success);
                     addItemModal.hide();
-                    fetchItems()
+                    fetchItems(search);
 
                     const logData = {
                         itemId: response.item.id,
@@ -136,7 +136,7 @@ export function initAddItem() {
     }
 }
 
-export async function initEditItem() {
+export async function initEditItem(search) {
     const form = document.getElementById("editItemForm");
     const modal = new bootstrap.Modal(document.getElementById("editItemModal"));
     const tableBody = document.getElementById("itemsTableBody");
@@ -191,7 +191,7 @@ export async function initEditItem() {
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
                     modal.hide();
-                    fetchItems();
+                    fetchItems(search);
                 } else {
                     window.electronAPI.showToast(response.message, false);
                 }
@@ -203,7 +203,7 @@ export async function initEditItem() {
     }
 }
 
-export async function initPullItem() {
+export async function initPullItem(search) {
     const pullItemForm = document.getElementById("pullItemForm");
     const pullItemModal = new bootstrap.Modal(document.getElementById("pullItemModal"));
     const tableBody = document.getElementById("itemsTableBody");
@@ -262,7 +262,7 @@ export async function initPullItem() {
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
                     pullItemModal.hide();
-                    fetchItems();
+                    fetchItems(search);
 
                     const logData = {
                         itemId: response.item.item.id,
@@ -287,7 +287,7 @@ export async function initPullItem() {
     }
 }
 
-export async function initUpdateItemQuantity() {
+export async function initUpdateItemQuantity(search) {
     const form = document.getElementById("newQuantityItemForm");
     const modal = new bootstrap.Modal(document.getElementById("updateItemQuantityModal"));
     const tableBody = document.getElementById("itemsTableBody");
@@ -326,12 +326,12 @@ export async function initUpdateItemQuantity() {
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
                     modal.hide();
-                    fetchItems();
+                    fetchItems(search);
 
                     const logData = {
                         itemId: currentId,
                         user: updatedBy,
-                        log: quantity === 1 ? `Added ${quantity} ${response.item.unit.toLowerCase()} of` : `Added ${quantity} ${response.item.unit.toLowerCase()}s of`
+                        log: quantity === 1 ? `Item delivered: ${quantity} ${response.item.unit.toLowerCase()} of` : `Item delivered: ${quantity} ${response.item.unit.toLowerCase()}s of`
                     }
                     try {
                         window.electronAPI.addLog(logData);
@@ -533,25 +533,81 @@ export async function fetchItems(searchQuery = "", yearFilter = "") {
 }
 
 export async function deleteAllLogs() {
-    const modal = new bootstrap.Modal(document.getElementById("deleteAllLogModal"));
-    const form = document.getElementById("deleteAllLogForm")
+    const modalElement = document.getElementById("deleteAllLogModal");
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) {
+        modal = new bootstrap.Modal(modalElement);
+    }
+    const form = document.getElementById("deleteAllLogForm");
+    const dontShowCheckbox = document.querySelector("#deleteAllLogModal #dontShow");
 
     if (form && !form._listenerAdded) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
+            // Save preference if "Don't show again" is checked
+            if (dontShowCheckbox && dontShowCheckbox.checked) {
+                localStorage.setItem("dontShowDeleteAllLogModal", "true");
+            } else {
+                localStorage.removeItem("dontShowDeleteAllLogModal");
+            }
+
             const response = await window.electronAPI.deleteAllLogs();
 
             if (response.success) {
-                window.electronAPI.showToast(response.message, true)
+                window.electronAPI.showToast(response.message, true);
                 modal.hide();
-
-                displayLogs()
+displayLogs()
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                    const tooltipInstance = bootstrap.Tooltip.getInstance(el);
+                    if (tooltipInstance) tooltipInstance.dispose();
+                  });
             } else {
-                window.electronAPI.showToast(response.message, false)
+                window.electronAPI.showToast(response.message, false);
             }
         });
         form._listenerAdded = true;
+    }
+}
+
+// New function to initialize delete all logs icon click behavior
+export function initDeleteAllLogs() {
+    const deleteAllIcon = document.getElementById("dltIcon");
+    const modalElement = document.getElementById("deleteAllLogModal");
+    const modal = new bootstrap.Modal(modalElement);
+    const logModalElement = document.getElementById("logModal");
+    const logModal = logModalElement ? new bootstrap.Modal(logModalElement) : null;
+
+    if (deleteAllIcon && !deleteAllIcon._listenerAdded) {
+        deleteAllIcon.addEventListener("click", async (event) => {
+            event.preventDefault();
+
+            const dontShow = localStorage.getItem("dontShowDeleteAllLogModal");
+
+            if (dontShow === "true") {
+                // Directly delete logs without showing modal
+                const response = await window.electronAPI.deleteAllLogs();
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+displayLogs()
+
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        const tooltipInstance = bootstrap.Tooltip.getInstance(el);
+                        if (tooltipInstance) tooltipInstance.dispose();
+                      });
+                } else {
+                    window.electronAPI.showToast(response.message, false);
+                }
+            } else {
+                // Hide the logModal if open before showing confirmation modal
+                if (logModal) {
+                    logModal.hide();
+                }
+                // Show confirmation modal
+                modal.show();
+            }
+        });
+        deleteAllIcon._listenerAdded = true;
     }
 }
 

@@ -268,6 +268,38 @@ ipcMain.handle("add-new-pr", async (event, data) => {
   }
 });
 
+ipcMain.handle("add-new-dr", async (event, data) => {
+  try {
+    const drId = await prisma.item.findUnique({
+      where: { itemCode: data.itemCode },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!drId) {
+      return { success: false, message: "Item not found." };
+    }
+
+    const newDr = await prisma.requestDelivered.create({
+      data: {
+        itemId: Number(drId.id),
+        deliveredQuantity: data.deliveredQuantity,
+        deliveredBy: data.deliveredBy,
+        receivedBy: data.receivedBy,
+        deliveredDate: new Date(isoDate(data.deliveredDate)),
+      },
+      include: {
+        item: true,
+      },
+    })
+
+    return { success: true, message: "Purchase Request added.", data: newDr }
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+});
+
 ipcMain.handle("edit-pr", async (event, data) => {
   try {
     const item = await prisma.purchaseRequest.findUnique({

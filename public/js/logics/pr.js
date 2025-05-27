@@ -2,7 +2,7 @@ import { capitalizeWords, formatDate } from "../utils/utils.js";
 
 let items = []
 
-export function initAddNewPr() {
+export function initAddNewPr(search) {
     const form = document.getElementById("addPrForm");
     const modal = new bootstrap.Modal(document.getElementById("addPrModal"));
 
@@ -43,7 +43,7 @@ export function initAddNewPr() {
             window.electronAPI.showToast(response.message, response.success);
             modal.hide();
             // form.reset();
-            fetchPr();
+            fetchPr(search);
 
             const logData = {
               itemId: response.data.item.id,
@@ -139,7 +139,7 @@ export async function fetchPr(searchQuery = "") {
 
 // undone
 
-export async function initEditPr() {
+export async function initEditPr(search) {
     const form = document.getElementById("editPrForm");
     const modal = new bootstrap.Modal(document.getElementById("editPrModal"));
     const tableBody = document.getElementById("prTableBody");
@@ -190,7 +190,7 @@ export async function initEditPr() {
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
                     modal.hide();
-                    fetchPr();
+                    fetchPr(search);
                 } else {
                     window.electronAPI.showToast(response.message, false);
                 }

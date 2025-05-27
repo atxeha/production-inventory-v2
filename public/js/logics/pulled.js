@@ -1,6 +1,6 @@
 import { formatDate, capitalizeWords } from "../utils/utils.js";
 
-export function initPullItem() {
+export function initPullItem(search) {
     const form = document.getElementById("pullForm");
     const modal = new bootstrap.Modal(document.getElementById("addPulledModal"));
 
@@ -34,7 +34,7 @@ export function initPullItem() {
                 if (response.success) {
                     modal.hide();
                     window.electronAPI.showToast(response.message, response.success);
-                    fetchPulledItems()
+                    fetchPulledItems(search)
 
                 } else {
                     window.electronAPI.showToast(response.message, response.success);

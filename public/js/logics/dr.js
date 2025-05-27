@@ -1,5 +1,57 @@
 import { capitalizeWords, formatDate } from "../utils/utils.js";
 
+export function initAddNewDr(search) {
+    const form = document.getElementById("drForm");
+    const modal = new bootstrap.Modal(document.getElementById("drModal"));
+
+    if (form && window.electronAPI && !form._prListenerAdded) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const rawCode = document.getElementById("drItem").value.trim().toUpperCase();
+            const quantity = parseInt(document.getElementById("drQuantity").value.trim());
+            const deliveredBy = capitalizeWords(document.getElementById("drDeliveredBy").value.trim());
+            const receivedBy = capitalizeWords(document.getElementById("drReceivedBy").value.trim());
+            const date = document.getElementById("drDate").value.trim();
+            const code = rawCode.split(" ")[0];
+
+            const data = {
+                itemCode: code,
+                deliveredQuantity: quantity,
+                deliveredBy: deliveredBy,
+                receivedBy: receivedBy,
+                deliveredDate: date,
+            };
+
+            if (!code || !deliveredBy || !receivedBy || !quantity || !date) { window.electronAPI.showToast("All fields required.", false); return; }
+
+            try {
+                const response = await window.electronAPI.addNewDr(data);
+
+                if (response.success) {
+                    modal.hide();
+                    window.electronAPI.showToast(response.message, response.success);
+                    fetchDr(search);
+
+                    const logData = {
+                        itemId: response.data.item.id,
+                        user: receivedBy,
+                        log: quantity === 1 ? `Item delivered: ${quantity} ${response.data.item.unit.toLowerCase()} of` : `Item delivered: ${quantity} ${response.data.item.unit.toLowerCase()}s of`
+                    };
+
+                    window.electronAPI.addLog(logData);
+                } else {
+                    window.electronAPI.showToast(response.message, response.success);
+                }
+            } catch (err) {
+                window.electronAPI.showToast(err.message, false);
+            }
+        });
+        form._prListenerAdded = true;
+    }
+}
+
+
 export async function fetchDr(searchQuery = "") {
     try {
         // const items = await window.electronAPI.fetchPr();
