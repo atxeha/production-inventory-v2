@@ -534,10 +534,6 @@ export async function fetchItems(searchQuery = "", yearFilter = "") {
 
 export async function deleteAllLogs() {
     const modalElement = document.getElementById("deleteAllLogModal");
-    let modal = bootstrap.Modal.getInstance(modalElement);
-    if (!modal) {
-        modal = new bootstrap.Modal(modalElement);
-    }
     const form = document.getElementById("deleteAllLogForm");
     const dontShowCheckbox = document.querySelector("#deleteAllLogModal #dontShow");
 
@@ -556,12 +552,10 @@ export async function deleteAllLogs() {
 
             if (response.success) {
                 window.electronAPI.showToast(response.message, true);
-                modal.hide();
-displayLogs()
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                    const tooltipInstance = bootstrap.Tooltip.getInstance(el);
-                    if (tooltipInstance) tooltipInstance.dispose();
-                  });
+                // Only get the instance, do not create a new one!
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+                displayLogs();
             } else {
                 window.electronAPI.showToast(response.message, false);
             }
@@ -589,7 +583,7 @@ export function initDeleteAllLogs() {
                 const response = await window.electronAPI.deleteAllLogs();
                 if (response.success) {
                     window.electronAPI.showToast(response.message, true);
-displayLogs()
+                    displayLogs()
 
                     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                         const tooltipInstance = bootstrap.Tooltip.getInstance(el);
