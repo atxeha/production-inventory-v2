@@ -153,3 +153,38 @@
         </div>
     </div>
 </div>
+
+<div class="modal" id="editDrModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="editDrModalLabel">Edit DR</h6>
+            </div>
+            <form method="post" id="editPDrForm">
+                <div class="modal-body font p-4 pb-2">
+                    <div class="row font mb-4">
+                        <div class="input-field col-2">
+                            <label class="mb-2 ms-2" for="editDrQuantity">Quantity</label>
+                            <input type="number" id="editDrQuantity" class="search-box form-control rounded-5 font"
+                                min="1">
+                        </div>
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="editDrDeliveredBy">Delivered By</label>
+                            <input type="text" id="editDrDeliveredBy" class="search-box form-control rounded-5 font">
+                        </div>
+                        <div class="input-field col-5">
+                            <label class="mb-2 ms-2" for="editDrReceivedBy">Received By</label>
+                            <input type="text" id="editDrReceivedBy" class="search-box form-control rounded-5 font">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer font">
+                        <button type="button" class="btn btn-link font p-0 me-3"
+                            data-bs-dismiss="modal">Discard</button>
+                        <button class="btns secondary-btn rounded-5 font" type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

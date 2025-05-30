@@ -50,13 +50,13 @@ export function initAddNewDr(search) {
         form._prListenerAdded = true;
     }
 }
-
+let items = [];
 
 export async function fetchDr(searchQuery = "") {
     try {
         // const items = await window.electronAPI.fetchPr();
 
-        const items = await window.electronAPI.fetchPrDr({
+        items = await window.electronAPI.fetchPrDr({
             tableName: "requestDelivered",
             orderBy: "deliveredDate",
             order: "desc"
@@ -110,8 +110,10 @@ export async function fetchDr(searchQuery = "") {
                 <td class=actions">
                     <i data-delete-id="${item.id}" class="dlt-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Delete">delete</i>
+                        <span data-bs-toggle="modal" data-bs-target="#editDrModal">
                     <i data-edit-id="${item.id}" class="edit-icon icon-btn icon material-icons" data-bs-toggle="tooltip"
                         data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Edit">edit</i>
+                        </span>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -149,5 +151,70 @@ export function initImportItem(search) {
             }
         });
         importBtn._importListenerAdded = true;
+    }
+}
+
+export async function initEditDr(search) {
+    const form = document.getElementById("editDrForm");
+    const modal = new bootstrap.Modal(document.getElementById("editDrModal"));
+    const tableBody = document.getElementById("drTableBody");
+
+    const quantity = document.getElementById("editDrQuantity");
+    const deliveredBy = document.getElementById("editDrDeliveredBy");
+    const receivedBy = document.getElementById("editDrRecievedBy");
+
+    let currentEditId = null;
+
+  if (tableBody && !tableBody._editListenerAdded) {
+        tableBody.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (target.classList.contains("edit-item")) {
+                event.preventDefault();
+                const id = target.dataset.editId;
+                currentEditId = id;
+
+                const item = items.find((item) => item.id == id);
+
+                quantity.value = item.deliveredQuantity;
+                deliveredBy.value = item.deliveredBy;
+                receivedBy.value = item.receivedBy;
+            }
+        });
+        tableBody._editListenerAdded = true;
+    }
+
+    if (form && !form._editListenerAdded) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const newQuantity = quantity.value.trim();
+            const newRequestedBy = capitalizeWords(requestedBy.value.trim());
+
+          if (!newQuantity || !newRequestedBy) {
+                window.electronAPI.showToast("All fields are required.", false);
+                return;
+            }
+
+            const data = {
+                id: currentEditId,
+                newQuantity: Number(newQuantity),
+                newRequestedBy: newRequestedBy,
+            };
+
+            try {
+                const response = await window.electronAPI.editPr(data);
+
+                if (response.success) {
+                    window.electronAPI.showToast(response.message, true);
+                    modal.hide();
+                    fetchPr(search);
+                } else {
+                    window.electronAPI.showToast(response.message, false);
+                }
+            } catch (error) {
+                window.electronAPI.showToast(error.message, false);
+            }
+        });
+        form._editListenerAdded = true;
     }
 }

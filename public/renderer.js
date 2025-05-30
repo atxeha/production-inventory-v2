@@ -429,6 +429,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           drModule.initImportItem(searchFilter);
           drModule.initAddNewDr(searchFilter);
+          drModule.initEditDr(searchFilter);
           drModule.fetchDr(searchFilter);
           const selectionHandler = await import(
             "./js/utils/itemSelectionHandler.js"
