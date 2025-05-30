@@ -124,6 +124,30 @@ export async function fetchDr(searchQuery = "") {
         const tooltip = await import("../utils/tooltipUtil.js")
         tooltip.initializeTooltip();
     } catch (error) {
-        console.error("Error fetching items:", error);
+        return;
     }
 };
+
+export function initImportItem(search) {
+    const importBtn = document.getElementById("importItem");
+    if (
+        importBtn &&
+        window.electronAPI?.importPulledItemsFromFile &&
+        !importBtn._importListenerAdded
+    ) {
+        importBtn.addEventListener("click", async () => {
+            const result = await window.electronAPI.importRequestDeliveredFromFile();
+            if (result && result.success) {
+                window.electronAPI.showToast(result.message, true);
+                // Optionally refresh your items table here:
+                fetchDr(search);
+            } else {
+                window.electronAPI.showToast(
+                    result?.message || "Import failed.",
+                    false
+                );
+            }
+        });
+        importBtn._importListenerAdded = true;
+    }
+}

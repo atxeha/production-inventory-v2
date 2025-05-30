@@ -100,7 +100,7 @@ export async function importPulledItemsFromFile(filePath: string) {
       let imported = 0,
         skipped = 0;
       for (const row of rows) {
-        const itemCode = String(row.itemCode || row["Item Code"]);
+        const itemCode = String(row.itemCode || row["Item Code"] || row["Code"]);
         const item = await prisma.item.findUnique({ where: { itemCode } });
         if (!item) {
           skipped++;
@@ -209,7 +209,7 @@ export async function importPurchaseRequestsFromFile(filePath: string) {
 
     let imported = 0, skipped = 0;
     for (const row of rows) {
-      const itemCode = String(row.code || row.Code || row["Item Code"]);
+      const itemCode = String(row.code || row.Code || row["Item Code"] || row["Code"]);
       const item = await prisma.item.findUnique({ where: { itemCode } });
       if (!item) {
         skipped++;
@@ -225,6 +225,51 @@ export async function importPurchaseRequestsFromFile(filePath: string) {
       };
 
       await prisma.purchaseRequest.create({ data: prData });
+      imported++;
+    }
+
+    return {
+      success: true,
+      message: `${imported} rows imported, ${skipped} skipped.`,
+    };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+  }
+
+export async function importRequestDeliveredFromFile(filePath: string) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+    console.log("Rows to process:", rows);
+
+    let imported = 0, skipped = 0;
+    for (const row of rows) {
+      const itemCode = String(row["item Code"] || row["Item Code"] || row["Code"] || row.code);
+      const item = await prisma.item.findUnique({ where: { itemCode } });
+      if (!item) {
+        skipped++;
+        continue;
+      }
+
+      // console.log("Processing row for item:", itemCode, row);
+
+      const deliveredData = {
+        itemId: item.id,
+        deliveredQuantity: Number(row.Quantity || row.quantity || row.QTY || 0),
+        deliveredBy: String(row["Delivered By"] || row.deliveredBy || ""),
+        receivedBy: String(row["Received By"] || row.receivedBy || ""),
+        deliveredDate: parseDate(row["Released Date"] || row.deliveredDate || row.Date) || new Date(),
+        isDeleted: false,
+      };
+
+      // console.log("Creating RequestDelivered with data:", deliveredData);
+
+      await prisma.requestDelivered.create({ data: deliveredData });
       imported++;
     }
 

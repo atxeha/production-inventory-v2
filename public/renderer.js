@@ -427,6 +427,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
           utilsDateModule.initDate("drDate");
 
+          drModule.initImportItem(searchFilter);
           drModule.initAddNewDr(searchFilter);
           drModule.fetchDr(searchFilter);
           const selectionHandler = await import(

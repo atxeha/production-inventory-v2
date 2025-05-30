@@ -137,8 +137,6 @@ export async function fetchPr(searchQuery = "") {
     }
 };
 
-// undone
-
 export async function initEditPr(search) {
     const form = document.getElementById("editPrForm");
     const modal = new bootstrap.Modal(document.getElementById("editPrModal"));

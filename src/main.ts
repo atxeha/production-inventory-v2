@@ -15,7 +15,12 @@ import {
   prisma
 } from "./database";
 import { nativeTheme } from "electron";
-import { importItemsFromFile, importPulledItemsFromFile, exportItemsToExcel, importPurchaseRequestsFromFile } from "./utils";
+import {
+  importItemsFromFile,
+  importPulledItemsFromFile,
+  exportItemsToExcel,
+  importPurchaseRequestsFromFile,
+  importRequestDeliveredFromFile } from "./utils";
 
 function isoDate(date: string) {
   if (date.length === 16) {
@@ -97,6 +102,14 @@ const menu = Menu.buildFromTemplate([
   {
     label: "Help",
     submenu: [
+      {
+        label: "FAQs",
+        click: () => {
+          if (mainWindow) {
+            mainWindow.webContents.send("load-page", "faq.html");
+          }
+        },
+      },
       {
         label: "Developer",
         click: () => {
@@ -512,4 +525,16 @@ ipcMain.handle("import-purchase-requests-from-file", async () => {
     return { success: false, message: "Import canceled." };
   }
   return await importPurchaseRequestsFromFile(filePaths[0]);
+});
+
+ipcMain.handle("import-request-delivered-from-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: "Select Excel File",
+    filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
+    properties: ["openFile"]
+  });
+  if (canceled || !filePaths[0]) {
+    return { success: false, message: "Import canceled." };
+  }
+  return await importRequestDeliveredFromFile(filePaths[0]);
 });
